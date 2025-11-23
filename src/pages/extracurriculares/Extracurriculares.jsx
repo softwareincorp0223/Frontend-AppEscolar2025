@@ -1,0 +1,60 @@
+import React, { useEffect, useState } from "react";
+import Layout from "../../components/Layout";
+import Table from "../../components/Table";
+import Form from "../../components/Form";
+import ActionButtons from "../../components/ActionButtons";
+import TableButtons from "../../components/TableButtons";
+import { obtenerExtracurricular, handleDelete, handleSave } from "../../functions/ExtracurricularActions";
+
+export default function Extracurriculares() {
+  const [extracurriculares, setExtracurriculares] = useState([]);
+  const [editingExtracurricular, setEditingExtracurricular] = useState(null);
+
+  useEffect(() => {
+    obtenerExtracurricular(setExtracurriculares);
+  }, []);
+
+  const formExtracurricular = [
+    { name: "nombre", label: "Extracurricular", type: "text", placeholder: "Ej. Futbol", required: true },
+  ];
+
+  const columnsExtracurricular = [
+    { label: "Nombre", key: "nombre" },
+  ];
+
+  return (
+    <Layout>
+      <Form
+        title={editingExtracurricular ? "Editar Extracurricular" : "Agregar Extracurricular"}
+        fields={formExtracurricular}
+        columns={1}
+        onSubmit={(values) => handleSave(values, editingExtracurricular, setEditingExtracurricular, () => obtenerExtracurricular(setExtracurriculares))}
+        initialValues={
+          editingExtracurricular
+            ? {
+              nombre: editingExtracurricular.nombre,
+            }
+            : {}
+        }
+      />
+
+      <Table
+        id="extracurricularTable"
+        title="Extracurricular"
+        columns={columnsExtracurricular}
+        data={extracurriculares}
+        renderActions={(row) => (
+          <ActionButtons
+            row={row}
+            onDelete={() => handleDelete(row, () => obtenerExtracurricular(setExtracurriculares))}
+            onEdit={() => setEditingExtracurricular(row)}
+            actions={["view","edit", "delete"]}
+          />
+        )}
+        headerButtons={(row) => (
+          <TableButtons row={row} actions={["excel"]} />
+        )}
+      />
+    </Layout>
+  );
+}
