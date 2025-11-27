@@ -10,16 +10,11 @@ import {
 export const obtenerNiveles = async (setNiveles) => {
   try {
     const nivelesApi = await InstitutoData("nivel?&sid_instituto=");
-    const formateados = nivelesApi.map((u) => ({
-      ...u,
-      Rol: u.Rol?.nombre || "Sin rol",
-    }));
-    setNiveles(formateados);
+    setNiveles(nivelesApi);
   } catch (error) {
     showAlert("error", "Error al obtener niveles");
   }
 };
-
 
 export const handleDelete = async (row, obtenerNiveles) => {
 
