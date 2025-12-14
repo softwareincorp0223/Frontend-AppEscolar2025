@@ -57,3 +57,180 @@ export const convertirLogoABase64 = async (ruta) => {
     lector.readAsDataURL(blob);
   });
 };
+
+function getField(obj, fields = []) {
+  for (const field of fields) {
+    const value = field.split(".").reduce((acc, key) => acc?.[key], obj);
+
+    if (value !== undefined && value !== null) {
+      return value;
+    }
+  }
+  return null;
+}
+
+function normalizarFecha(valor) {
+  if (!valor) return null;
+
+  // Si ya es Date
+  if (valor instanceof Date) return valor;
+
+  // String
+  if (typeof valor === "string") {
+    // yyyy-mm-dd
+    if (/^\d{4}-\d{2}-\d{2}$/.test(valor)) {
+      return new Date(valor + "T00:00:00");
+    }
+
+    // yyyy-mm-dd hh:mm:ss
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(valor)) {
+      return new Date(valor.replace(" ", "T"));
+    }
+
+    // fallback
+    const parsed = new Date(valor);
+    return isNaN(parsed) ? null : parsed;
+  }
+
+  return null;
+}
+
+const FIELD_MAP = {
+  nombre: ["nombre", "nombre_alumno", "nombre_profesor"],
+  apellido: ["apellido", "apellido_alumno", "apellido_profesor"],
+  nivel: ["sid_nivel", "id_nivel", "nivel"],
+  grado: ["sid_grado", "id_grado", "grado"],
+  grupo: ["nombre_grupo", "grupo", 'Grupo'],
+  fecha: [
+    "fecha_ingreso",
+    "fecha",
+    "fecha_creacion",
+    "created_at",
+  ],
+};
+
+function obtenerFechaRegistro(item) {
+  for (const campo of FIELD_MAP.fecha) {
+    if (item[campo]) {
+      return normalizarFecha(item[campo]);
+    }
+  }
+  return null;
+}
+
+export function filtrarTabla({ filtros, dataOriginal }) {
+  let resultado = [...dataOriginal];
+  console.log(filtros);
+
+  // NIVEL
+  if (filtros.nivel) {
+    resultado = resultado.filter(
+      (a) => getField(a, FIELD_MAP.nivel) === filtros.nivel
+    );
+  }
+  console.log(resultado);
+
+  // GRADO
+  if (filtros.grado) {
+    resultado = resultado.filter(
+      (a) => getField(a, FIELD_MAP.grado) === filtros.grado
+    );
+  }
+
+  // GRUPO
+  if (filtros.grupo) {
+    const g = filtros.grupo.toLowerCase();
+    resultado = resultado.filter(
+      (a) => getField(a, FIELD_MAP.grupo)?.toLowerCase() === g
+    );
+  }
+
+  // BÚSQUEDA (nombre + apellido)
+  if (filtros.buscar && filtros.buscar.trim() !== "") {
+    const b = filtros.buscar.toLowerCase();
+
+    resultado = resultado.filter((a) => {
+      const nombre = getField(a, FIELD_MAP.nombre)?.toLowerCase() || "";
+      const apellido = getField(a, FIELD_MAP.apellido)?.toLowerCase() || "";
+      return nombre.includes(b) || apellido.includes(b);
+    });
+  }
+
+  const fechaInicio = filtros.fechaInicio || filtros.desde || null;
+  const fechaFin = filtros.fechaFin || filtros.hasta || null;
+
+  if (fechaInicio || fechaFin) {
+    const desde = fechaInicio ? normalizarFecha(fechaInicio) : null;
+
+    const hasta = fechaFin ? normalizarFecha(fechaFin + " 23:59:59") : null;
+
+    resultado = resultado.filter((item) => {
+      const fecha = obtenerFechaRegistro(item);
+      if (!fecha) return false;
+
+      if (desde && fecha < desde) return false;
+      if (hasta && fecha > hasta) return false;
+
+      return true;
+    });
+  }
+
+  return resultado;
+}
+
+/*
+export function filtrarTabla({ filtros, dataOriginal }) {
+  let resultado = [...dataOriginal];
+
+  //GENERALIZAR LAS BUSQUEDAS EJEMPLO BUSCA POR NOMBRE APELLIDO PERO DE ASISTENCIAS SE LLAMA APELLIDO ALUMNO, NOMBRE ALUMNO CAMBIARLO 
+console.log(resultado);
+
+  // NIVEL
+  if (filtros.nivel) {
+    resultado = resultado.filter(a => a.sid_nivel === filtros.nivel);
+  }
+
+  // GRADO
+  if (filtros.grado) {
+    resultado = resultado.filter(a => a.sid_grado === filtros.grado);
+  }
+
+  // GRUPO
+  if (filtros.grupo && filtros.grupo.trim() !== "") {
+    const g = filtros.grupo.toLowerCase();
+    resultado = resultado.filter(a =>
+      a.Grupo?.toLowerCase() === g
+    );
+  }
+
+  // BÚSQUEDA
+  if (filtros.buscar && filtros.buscar.trim() !== "") {
+    const b = filtros.buscar.toLowerCase();
+    resultado = resultado.filter(a =>
+      a.nombre?.toLowerCase().includes(b) ||
+      a.apellido?.toLowerCase().includes(b)
+    );
+  }
+
+  // FECHAS
+  if (filtros.fechaInicio || filtros.fechaFin) {
+    const desde = filtros.fechaInicio
+      ? new Date(`${filtros.fechaInicio}T00:00:00`)
+      : null;
+
+    const hasta = filtros.fechaFin
+      ? new Date(`${filtros.fechaFin}T23:59:59`)
+      : null;
+
+    resultado = resultado.filter(a => {
+      const fecha = new Date(a.creacion);
+      if (desde && fecha < desde) return false;
+      if (hasta && fecha > hasta) return false;
+      return true;
+    });
+  }
+
+
+  return resultado;
+}
+*/

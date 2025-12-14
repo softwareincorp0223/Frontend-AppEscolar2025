@@ -1,32 +1,30 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Layout from "../../components/Layout";
 import Table from "../../components/Table";
 import TableButtons from "../../components/TableButtons";
 import Filter from "../../components/Filter";
+import { filtrarTabla } from "../../functions/general/Functions";
+import { obtenerAsistencias } from "../../functions/AsistenciasActions";
 
 export default function Asistencias() {
-  const dataOriginal = [
-    {
-      mensaje_id: "1",
-      estudiante: "Juan Pérez",
-      nivel: "Primaria",
-      grado: "3",
-      grupo: "A",
-      fecha_y_hora: "2025-10-01 08:00",
-      tipo: "Entrada",
-      registrado_por: "Admin",
-    },
-    {
-      mensaje_id: "2",
-      estudiante: "Ana Gómez",
-      nivel: "Secundaria",
-      grado: "1",
-      grupo: "B",
-      fecha_y_hora: "2025-10-01 08:10",
-      tipo: "Entrada",
-      registrado_por: "Admin",
-    },
-  ];
+  const [asistencias, setAsistencias] = useState([]);
+  const [asistenciasOriginal, setAsistenciasOriginal] = useState([]);
+
+  const manejarCambioFiltros = (f) => {
+    const resultado = filtrarTabla({
+      filtros: f,
+      dataOriginal: asistenciasOriginal,
+    });
+
+    setAsistencias(resultado);
+  };
+
+  useEffect(() => {
+    obtenerAsistencias((res) => {
+      setAsistenciasOriginal(res);
+      setAsistencias(res);
+    });
+  }, []);
 
   const columns = [
     { label: "Nombre", key: "estudiante" },
@@ -37,45 +35,6 @@ export default function Asistencias() {
     { label: "Tipo", key: "tipo" },
     { label: "Registrado por", key: "registrado_por" },
   ];
-
-  const [asistencias, setAsistencias] = useState(dataOriginal);
-
-  const filtrarDatos = (filtros) => {
-    let filtrado = dataOriginal;
-
-    if (filtros.buscar) {
-      const buscarLower = filtros.buscar.toLowerCase();
-      filtrado = filtrado.filter((d) =>
-        d.estudiante.toLowerCase().includes(buscarLower)
-      );
-    }
-
-    if (filtros.nivel) {
-      filtrado = filtrado.filter((d) => d.nivel === filtros.nivel);
-    }
-
-    if (filtros.grado) {
-      filtrado = filtrado.filter((d) => d.grado === filtros.grado);
-    }
-
-    if (filtros.grupo) {
-      filtrado = filtrado.filter((d) => d.grupo === filtros.grupo);
-    }
-
-    if (filtros.desde) {
-      filtrado = filtrado.filter(
-        (d) => new Date(d.fecha_y_hora) >= new Date(filtros.desde)
-      );
-    }
-
-    if (filtros.hasta) {
-      filtrado = filtrado.filter(
-        (d) => new Date(d.fecha_y_hora) <= new Date(filtros.hasta)
-      );
-    }
-
-    setAsistencias(filtrado);
-  };
 
   return (
     <Layout>
@@ -89,7 +48,7 @@ export default function Asistencias() {
             <Filter
               enabledFilters={["buscar", "rango", "nivel", "grado", "grupo"]}
               nombreFiltro="Estudiantes"
-              onFilterChange={filtrarDatos}
+              onFilterChange={manejarCambioFiltros}
             />
             <Table
               id="asistenciasTable"
@@ -108,7 +67,6 @@ export default function Asistencias() {
             />
           </div>
         </div>
-
       </div>
     </Layout>
   );
