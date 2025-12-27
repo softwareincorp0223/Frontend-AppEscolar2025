@@ -50,8 +50,8 @@ export const handleSaveGrados = async (values, editingGrado, setEditingGrado, ob
   const payload = {
     id_grado: editingGrado ? editingGrado.id_grado : null,
     sid_nivel: values.nombreNivel,
-    nombre:values.nombre,
-    orden:1
+    nombre: values.nombre,
+    orden: 1
   };
 
   console.log(values);
@@ -65,4 +65,16 @@ export const handleSaveGrados = async (values, editingGrado, setEditingGrado, ob
   }
 
   await obtenerGrados();
+};
+
+export const obtenerGradosPorNivel = async (sid_nivel, setGrados) => {
+  try {
+    const where = encodeURIComponent(JSON.stringify({ sid_nivel }));
+
+    const data = await InstitutoDataFilter(`grado?where=${where}`);
+
+    setGrados(data);
+  } catch (error) {
+    showAlert("error", "Error al obtener grados por nivel");
+  }
 };

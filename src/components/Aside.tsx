@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import logo from "../../src/assets/logo_app_escolar.png";
 import "bootstrap/dist/css/bootstrap.min.css";
 
@@ -112,6 +112,20 @@ export default function Aside(): JSX.Element {
       link: "/src/pages/pagos/index.html",
     },
   ];
+
+  useEffect(() => {
+    menuItems.forEach((item, index) => {
+      if (item.children) {
+        const hasActiveChild = item.children.some(
+          (child) => child.link === currentPath
+        );
+
+        if (hasActiveChild) {
+          setOpenSubmenu(index);
+        }
+      }
+    });
+  }, [currentPath]);
 
   const isActive = (link?: string) => (link ? currentPath === link : false);
 
