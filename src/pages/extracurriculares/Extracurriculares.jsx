@@ -4,11 +4,14 @@ import Table from "../../components/Table";
 import Form from "../../components/Form";
 import ActionButtons from "../../components/ActionButtons";
 import TableButtons from "../../components/TableButtons";
+import ExtracurricularDetails from "../../components/details/ExtracurricularDetails";
 import { obtenerExtracurricular, handleDelete, handleSave } from "../../functions/ExtracurricularActions";
 
 export default function Extracurriculares() {
   const [extracurriculares, setExtracurriculares] = useState([]);
   const [editingExtracurricular, setEditingExtracurricular] = useState(null);
+  const [selectedExtra, setSelectedExtra] = useState(null);
+
 
   useEffect(() => {
     obtenerExtracurricular(setExtracurriculares);
@@ -37,24 +40,29 @@ export default function Extracurriculares() {
             : {}
         }
       />
+      {selectedExtra ? (
+        <ExtracurricularDetails alumno={selectedExtra} onClose={() => setSelectedExtra(null)} />
+      ) : (
 
-      <Table
-        id="extracurricularTable"
-        title="Extracurricular"
-        columns={columnsExtracurricular}
-        data={extracurriculares}
-        renderActions={(row) => (
-          <ActionButtons
-            row={row}
-            onDelete={() => handleDelete(row, () => obtenerExtracurricular(setExtracurriculares))}
-            onEdit={() => setEditingExtracurricular(row)}
-            actions={["view","edit", "delete"]}
-          />
-        )}
-        headerButtons={(row) => (
-          <TableButtons row={row} actions={["excel"]} />
-        )}
-      />
+        <Table
+          id="extracurricularTable"
+          title="Extracurricular"
+          columns={columnsExtracurricular}
+          data={extracurriculares}
+          renderActions={(row) => (
+            <ActionButtons
+              row={row}
+              setSelectedUser={setSelectedExtra}
+              onDelete={() => handleDelete(row, () => obtenerExtracurricular(setExtracurriculares))}
+              onEdit={() => setEditingExtracurricular(row)}
+              actions={["view", "edit", "delete"]}
+            />
+          )}
+          headerButtons={(row) => (
+            <TableButtons row={row} actions={["excel"]} />
+          )}
+        />
+      )}
     </Layout>
   );
 }

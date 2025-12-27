@@ -11,11 +11,23 @@ export default function Form({
   const [formValues, setFormValues] = useState({});
 
   // 🔹 Actualizar valores cuando cambien los initialValues
-useEffect(() => {
-  if (initialValues) {
-    setFormValues(initialValues);
-  }
-}, [initialValues]);
+
+  useEffect(() => {
+    if (initialValues) {
+      setFormValues(initialValues);
+    }
+  }, [initialValues]);
+
+  //nuevo
+  // const initialized = React.useRef(false);
+
+  // useEffect(() => {
+  //   if (initialValues && Object.keys(initialValues).length > 0) {
+  //     setFormValues(initialValues);
+  //   } else {
+  //     setFormValues({});
+  //   }
+  // }, [initialValues]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -26,8 +38,19 @@ useEffect(() => {
     e.preventDefault();
 
     const newErrors = {};
+    // fields.forEach((field) => {
+    //   if (field.required && !formValues[field.name]) {
+    //     newErrors[field.name] = "Este campo es obligatorio";
+    //   }
+    // });
+
     fields.forEach((field) => {
-      if (field.required && !formValues[field.name]) {
+      const value = formValues[field.name];
+
+      if (
+        field.required &&
+        (value === undefined || value === null || value === "")
+      ) {
         newErrors[field.name] = "Este campo es obligatorio";
       }
     });
@@ -41,10 +64,16 @@ useEffect(() => {
     if (onSubmit) onSubmit(formValues);
 
     // 🔹 Limpiar el formulario después de enviar (solo si es creación)
-    if (!initialValues || Object.keys(initialValues).length === 0) {
+    // if (!initialValues || Object.keys(initialValues).length === 0) {
+    //   setFormValues({});
+    //   e.target.reset();
+    // }
+
+    if (!initialValues) {
       setFormValues({});
       e.target.reset();
     }
+
   };
 
   const colClass = `col-md-${12 / columns} mb-4`;
@@ -65,11 +94,10 @@ useEffect(() => {
                   )}
                 </label>
 
-                {field.type === "select" ? (
+                {/* {field.type === "select" ? (
                   <select
-                    className={`form-select ${
-                      errors[field.name] ? "is-invalid" : ""
-                    }`}
+                    className={`form-select ${errors[field.name] ? "is-invalid" : ""
+                      }`}
                     id={field.name}
                     name={field.name}
                     value={formValues[field.name] || ""}
@@ -91,14 +119,49 @@ useEffect(() => {
                   </select>
                 ) : (
                   <input
-                    className={`form-control ${
-                      errors[field.name] ? "is-invalid" : ""
-                    }`}
+                    className={`form-control ${errors[field.name] ? "is-invalid" : ""
+                      }`}
                     id={field.name}
                     name={field.name}
                     placeholder={field.placeholder}
                     type={field.type || "text"}
                     value={formValues[field.name] || ""}
+                    onChange={handleChange}
+                  />
+                )} */}
+
+                {field.type === "custom" && field.component ? (
+                  field.component({
+                    name: field.name,
+                    value: formValues[field.name],
+                    onChange: (val) =>
+                      setFormValues((prev) => ({
+                        ...prev,
+                        [field.name]: val,
+                      })),
+                    setFormValues,
+                    error: errors[field.name],
+                  })
+                ) : field.type === "select" ? (
+                  <select
+                    className={`form-select ${errors[field.name] ? "is-invalid" : ""}`}
+                    name={field.name}
+                    value={formValues[field.name] ?? ""}
+                    onChange={handleChange}
+                  >
+                    <option value="">Seleccione...</option>
+                    {field.options?.map((opt, i) => (
+                      <option key={i} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    className={`form-control ${errors[field.name] ? "is-invalid" : ""}`}
+                    name={field.name}
+                    placeholder={field.placeholder}
+                    value={formValues[field.name] ?? ""}
                     onChange={handleChange}
                   />
                 )}
@@ -112,9 +175,8 @@ useEffect(() => {
 
           <div className="text-end">
             <button
-              className={`btn ${
-                title.includes("Editar") ? "btn-primary" : "btn-success"
-              } py-2`}
+              className={`btn ${title.includes("Editar") ? "btn-primary" : "btn-success"
+                } py-2`}
               type="submit"
             >
               {title.includes("Editar") ? "Actualizar" : "Guardar"}

@@ -2,14 +2,14 @@ import React, { useEffect, useState } from "react";
 import Layout from "../../components/Layout";
 import imagenPortada from "../../assets/configuracion.jpg";
 import Form from "../../components/Form";
-import { obtenerInstituto, obtenerUsuario,handleSave } from "../../functions/ConfiguracionActions";
+import { obtenerInstituto, obtenerUsuario, handleSave } from "../../functions/ConfiguracionActions";
 
 export default function Configuraciones() {
 
   const [instituto, setInstituto] = useState(null);
   const [usuario, setUsuario] = useState([]);
   const [editingInstituto, setEditingInstituto] = useState(false);
-  
+
 
   useEffect(() => {
     obtenerInstituto((data) => setInstituto(data[0]));
@@ -81,7 +81,7 @@ export default function Configuraciones() {
                 <h6><strong>Datos bancarios:</strong> {instituto?.banco || "Dato no disponible"}</h6>
 
                 <button
-                  className="btn btn-success mt-3"
+                  className="btn btn-success btn-sm px-4 py-1"
                   onClick={() => setEditingInstituto(true)}
                 >
                   Editar configuración
@@ -101,7 +101,14 @@ export default function Configuraciones() {
                     formInstituto
                   }
                   columns={1}
-                  onSubmit={(values) => handleSave(values, editingInstituto, setEditingInstituto)}
+                  onSubmit={(values) =>
+                    handleSave(
+                      values,
+                      editingInstituto,
+                      setEditingInstituto,
+                      () => obtenerInstituto((data) => setInstituto(data[0]))
+                    )
+                  }
                   initialValues={{
                     nombre: instituto?.nombre || "",
                     descripcion: instituto?.descripcion || "",
