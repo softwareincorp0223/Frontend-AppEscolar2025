@@ -73,7 +73,6 @@ export default function Form({
       setFormValues({});
       e.target.reset();
     }
-
   };
 
   const colClass = `col-md-${12 / columns} mb-4`;
@@ -144,10 +143,15 @@ export default function Form({
                   })
                 ) : field.type === "select" ? (
                   <select
-                    className={`form-select ${errors[field.name] ? "is-invalid" : ""}`}
+                    className={`form-select ${
+                      errors[field.name] ? "is-invalid" : ""
+                    }`}
                     name={field.name}
                     value={formValues[field.name] ?? ""}
-                    onChange={handleChange}
+                    onChange={(e) => {
+                      handleChange(e);
+                      field.onChange && field.onChange(e);
+                    }}
                   >
                     <option value="">Seleccione...</option>
                     {field.options?.map((opt, i) => (
@@ -158,7 +162,9 @@ export default function Form({
                   </select>
                 ) : (
                   <input
-                    className={`form-control ${errors[field.name] ? "is-invalid" : ""}`}
+                    className={`form-control ${
+                      errors[field.name] ? "is-invalid" : ""
+                    }`}
                     name={field.name}
                     placeholder={field.placeholder}
                     value={formValues[field.name] ?? ""}
@@ -175,8 +181,9 @@ export default function Form({
 
           <div className="text-end">
             <button
-              className={`btn ${title.includes("Editar") ? "btn-primary" : "btn-success"
-                } py-2`}
+              className={`btn ${
+                title.includes("Editar") ? "btn-primary" : "btn-success"
+              } py-2`}
               type="submit"
             >
               {title.includes("Editar") ? "Actualizar" : "Guardar"}

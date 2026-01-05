@@ -13,11 +13,13 @@ import {
 } from "../../functions/PadresActions";
 import { exportarExcel } from "../../functions/general/exportarExcel";
 import { exportarPDF } from "../../functions/general/ExportarPDF";
+import PadreDetails from "../../components/details/PadresDetails";
 
 export default function Padres() {
   const [padres, setPadres] = useState([]);
   const [editing, setEditing] = useState(null);
   const [deleteCheck, setDeleteCheck] = useState([]);
+  const [selectedPadre, setSelectedPadre] = useState(null);
 
   useEffect(() => {
     obtenerPadres(setPadres);
@@ -29,7 +31,7 @@ export default function Padres() {
     { label: "Correo", key: "correo" },
   ];
 
-  // 🔹 Funciones que usarán los botones
+  // Funciones que usarán los botones
   const deleteVarios = () => {
     console.log("Eliminar varios:", deleteCheck);
     handleDeleteVarios(deleteCheck, setPadres);
@@ -51,7 +53,7 @@ export default function Padres() {
     window.location.href = "/src/pages/cargar-datos/index.html"; // redirige al dashboard
   };
 
-  // 🔹 Handlers que se pasarán al componente
+  //Handlers que se pasarán al componente
   const tableHandlers = {
     delete: deleteVarios,
     excel: botonExcel,
@@ -88,29 +90,39 @@ export default function Padres() {
           initialValues={editing || {}}
         />
 
-        <Table
-          id="padresTable"
-          title="Padres"
-          columns={columns}
-          data={padres}
-          showCheckbox={true}
-          renderActions={(row) => (
-            <ActionButtons
-              row={row}
-              actions={["view", "edit", "delete"]}
-              onDelete={() => handleDelete(row, () => obtenerPadres(setPadres))}
-              onEdit={() => setEditing(row)}
-            />
-          )}
-          headerButtons={(row) => (
-            <TableButtons
-              row={row}
-              actions={["delete", "excel", "pdf", "datos"]}
-              onActions={tableHandlers}
-            />
-          )}
-          onSelectionChange={(ids) => setDeleteCheck(ids)}
-        />
+        {selectedPadre ? (
+          <PadreDetails
+            padre={selectedPadre}
+            onClose={() => setSelectedPadre(null)}
+          />
+        ) : (
+          <Table
+            id="padresTable"
+            title="Padres"
+            columns={columns}
+            data={padres}
+            showCheckbox={true}
+            renderActions={(row) => (
+              <ActionButtons
+                row={row}
+                setSelectedUser={setSelectedPadre}
+                actions={["view", "edit", "delete"]}
+                onDelete={() =>
+                  handleDelete(row, () => obtenerPadres(setPadres))
+                }
+                onEdit={() => setEditing(row)}
+              />
+            )}
+            headerButtons={(row) => (
+              <TableButtons
+                row={row}
+                actions={["delete", "excel", "pdf", "datos"]}
+                onActions={tableHandlers}
+              />
+            )}
+            onSelectionChange={(ids) => setDeleteCheck(ids)}
+          />
+        )}
       </div>
     </Layout>
   );

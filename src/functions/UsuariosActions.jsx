@@ -13,6 +13,7 @@ export const obtenerUsuarios = async (setUsuarios) => {
     const formateados = usuariosApi.map((u) => ({
       ...u,
       Rol: u.Rol?.nombre || "Sin rol",
+      Fecha: fechaFormateada(u?.creacion, { paraUI: true }) || "Sin Fecha",
     }));
     setUsuarios(formateados);
   } catch (error) {

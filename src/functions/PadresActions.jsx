@@ -6,6 +6,7 @@ import {
   InstitutoDataDelete,
   InstitutoDataUpdate,
 } from "./general/DataActions";
+import { generarCodigoQR } from "./general/Functions";
 
 export const obtenerPadres = async (setPadres) => {
   try {
@@ -26,13 +27,13 @@ export const handleDelete = async (row, obtenerPadres) => {
 };
 
 export const handleDeleteVarios = async (ids, setPadres) => {
-  if(ids.length == 0){
+  if (ids.length == 0) {
     showAlert("error", "Selecciona los padres que deseas eliminar.");
     return;
   }
   const result = await showAlert("delete", "¿Deseas eliminar varios Padres?");
   if (!result.isConfirmed) return;
-  await InstitutoDataDelete(ids, 'padre', 'id_padre');
+  await InstitutoDataDelete(ids, "padre", "id_padre");
   await obtenerPadres(setPadres); // refrescar tabla
   showAlert("success", "Padre eliminado correctamente");
 };
@@ -45,7 +46,8 @@ export const handleSave = async (
 ) => {
   const sid_instituto = localStorage.getItem("sid_instituto");
   const fecha = fechaFormateada();
-  const generarPassword = () => Math.random().toString(36).slice(-5);
+
+  const generarPassword = () => Math.random().toString(36).slice(-10);
 
   const payload = {
     id_padre: editing ? editing.id_padre : null,
@@ -54,12 +56,11 @@ export const handleSave = async (
     correo: values.correo,
     creacion: editing ? editing.creacion : fecha,
     contrasena: editing ? editing.contrasena : generarPassword(),
-    codigo_qr: "codigoQR",
+    codigo_qr: editing ? editing.codigo_qr : generarCodigoQR(),
     sid_instituto,
   };
 
   if (editing) {
-    console.log(editing);
     await InstitutoDataUpdate(`padre/${editing.id_padre}`, payload);
     showAlert("success", "Padre actualizado correctamente");
     setEditing(null);

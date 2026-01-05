@@ -1,32 +1,38 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Layout from "../../components/Layout";
 import Table from "../../components/Table";
 import TableButtons from "../../components/TableButtons";
 import ActionButtons from "../../components/ActionButtons";
 import Filter from "../../components/Filter";
+import { obtenerRegistroMensajes } from "../../functions/MensajeRegistroActions";
+import { filtrarTabla } from "../../functions/general/Functions";
 
 export default function MensajeRegistro() {
-  const dataRegistros = [
-    {
-      mensaje_id: "1",
-      asunto: "asunto",
-      emisor: "emisor",
-      fecha_de_envio: "fecha_de_envio",
-      responsable: "responsable",
-      fecha_de_eliminacion: "fecha_de_eliminacion",
-    },
-  ];
+  const [registros, setRegistros] = useState([]);
+  const [registrosOriginal, setRegistrosOriginal] = useState([]);
+
+  const manejarCambioFiltros = (f) => {
+    const resultado = filtrarTabla({
+      filtros: f,
+      dataOriginal: registrosOriginal,
+    });
+
+    setRegistros(resultado);
+  };
+
+  useEffect(() => {
+    obtenerRegistroMensajes((res) => {
+      setRegistrosOriginal(res);
+      setRegistros(res);
+    });
+  }, []);
 
   const columns = [
     { label: "Asunto", key: "asunto" },
     { label: "Emisor", key: "emisor" },
     { label: "Fecha De Envío", key: "fecha_de_envio" },
-    { label: "Responsable", key: "responsable" },
     { label: "Fecha De Eliminacion", key: "fecha_de_eliminacion" },
   ];
-
-  const [registros, setRegistros] = useState(dataRegistros);
-  
 
   // funciones para acciones de la tabla
   const handleEdit = (id) => {
@@ -34,56 +40,9 @@ export default function MensajeRegistro() {
     showAlert("info", `Editar mensaje con ID ${id}`);
   };
 
-  const handleDelete = (id) => {
-    console.log("Eliminar registro:", id);
-    // Podrías meter un confirm primero
-    showAlert(
-      "warning",
-      `¿Seguro que deseas eliminar el mensaje con ID ${id}?`
-    );
-  };
-
   const handleFormSubmit = (values) => {
     console.log("Datos enviados:", values);
     showAlert("success", "Este es un alert global");
-  };
-
-  
-  const filtrarDatos = (filtros) => {
-    let filtrado = dataRegistros;
-
-    if (filtros.buscar) {
-      const buscarLower = filtros.buscar.toLowerCase();
-      filtrado = filtrado.filter((d) =>
-        d.estudiante.toLowerCase().includes(buscarLower)
-      );
-    }
-
-    if (filtros.nivel) {
-      filtrado = filtrado.filter((d) => d.nivel === filtros.nivel);
-    }
-
-    if (filtros.grado) {
-      filtrado = filtrado.filter((d) => d.grado === filtros.grado);
-    }
-
-    if (filtros.grupo) {
-      filtrado = filtrado.filter((d) => d.grupo === filtros.grupo);
-    }
-
-    if (filtros.desde) {
-      filtrado = filtrado.filter(
-        (d) => new Date(d.fecha_y_hora) >= new Date(filtros.desde)
-      );
-    }
-
-    if (filtros.hasta) {
-      filtrado = filtrado.filter(
-        (d) => new Date(d.fecha_y_hora) <= new Date(filtros.hasta)
-      );
-    }
-
-    setRegistros(filtrado);
   };
 
   return (
@@ -102,7 +61,7 @@ export default function MensajeRegistro() {
               //onFilterChange={filtrarDatos}
               enabledFilters={["buscar", "rango"]}
               nombreFiltro="Mensajes"
-              onFilterChange={filtrarDatos}
+              onFilterChange={manejarCambioFiltros}
             />
 
             {/* Tabla Registro */}

@@ -1,3 +1,4 @@
+//ya no se usa
 export const filtrarDatos = (filtros, dataOriginal) => {
   let filtrado = dataOriginal;
 
@@ -37,14 +38,63 @@ export const filtrarDatos = (filtros, dataOriginal) => {
 
   return filtrado;
 };
+//ya no se usa
 
-export function fechaFormateada(date = new Date()) {
+export function fechaFormateada(fecha, { paraUI = false } = {}) {
+  // si viene vacío, devolver tal cual
+  if (fecha === null || fecha === undefined || fecha === "") return fecha;
+
+  let date;
+  let soloFecha = false;
+
+  switch (true) {
+    case fecha instanceof Date:
+      date = fecha;
+      break;
+
+    // YYYY-MM-DD → SOLO FECHA
+    case typeof fecha === "string" && /^\d{4}-\d{2}-\d{2}$/.test(fecha):
+      date = new Date(`${fecha}T00:00:00`);
+      soloFecha = true;
+      break;
+
+    // ISO con hora
+    case typeof fecha === "string" && /^\d{4}-\d{2}-\d{2}T/.test(fecha):
+      date = new Date(fecha);
+      break;
+
+    // timestamp
+    case typeof fecha === "number":
+      date = new Date(fecha);
+      break;
+
+    default:
+      alert(
+        `No se pudo formatear la fecha.\nValor recibido: ${fecha}\nAgrega un nuevo case.`
+      );
+      return fecha;
+  }
+
+  if (isNaN(date.getTime())) return fecha;
+
   const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0"); // meses empiezan en 0
+  const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");
+
+  // FORMATO UI → DD-MM-YYYY
+  if (paraUI) {
+    return `${d}-${m}-${y}`;
+  }
+
+  // solo fecha (backend / export / logs)
+  if (soloFecha) {
+    return `${y}-${m}-${d}`;
+  }
+
   const h = String(date.getHours()).padStart(2, "0");
   const min = String(date.getMinutes()).padStart(2, "0");
   const s = String(date.getSeconds()).padStart(2, "0");
+
   return `${y}-${m}-${d} ${h}:${min}:${s}`;
 }
 
@@ -96,16 +146,23 @@ function normalizarFecha(valor) {
 }
 
 const FIELD_MAP = {
-  nombre: ["nombre", "nombre_alumno", "nombre_profesor"],
-  apellido: ["apellido", "apellido_alumno", "apellido_profesor"],
+  nombre: ["nombre", "nombre_alumno", "nombre_profesor", "asunto"],
+  apellido: [
+    "apellido",
+    "apellido_alumno",
+    "apellido_profesor",
+    "matricula",
+    "emisor",
+  ],
   nivel: ["sid_nivel", "id_nivel", "nivel"],
   grado: ["sid_grado", "id_grado", "grado"],
-  grupo: ["nombre_grupo", "grupo", 'Grupo'],
+  grupo: ["nombre_grupo", "grupo", "Grupo"],
   fecha: [
     "fecha_ingreso",
     "fecha",
     "fecha_creacion",
     "created_at",
+    "fecha_de_envio",
   ],
 };
 
@@ -178,59 +235,17 @@ export function filtrarTabla({ filtros, dataOriginal }) {
   return resultado;
 }
 
-/*
-export function filtrarTabla({ filtros, dataOriginal }) {
-  let resultado = [...dataOriginal];
+export function descargarQR() {
+  const canvas = document.querySelector("canvas");
+  if (!canvas) return;
 
-  //GENERALIZAR LAS BUSQUEDAS EJEMPLO BUSCA POR NOMBRE APELLIDO PERO DE ASISTENCIAS SE LLAMA APELLIDO ALUMNO, NOMBRE ALUMNO CAMBIARLO 
-console.log(resultado);
-
-  // NIVEL
-  if (filtros.nivel) {
-    resultado = resultado.filter(a => a.sid_nivel === filtros.nivel);
-  }
-
-  // GRADO
-  if (filtros.grado) {
-    resultado = resultado.filter(a => a.sid_grado === filtros.grado);
-  }
-
-  // GRUPO
-  if (filtros.grupo && filtros.grupo.trim() !== "") {
-    const g = filtros.grupo.toLowerCase();
-    resultado = resultado.filter(a =>
-      a.Grupo?.toLowerCase() === g
-    );
-  }
-
-  // BÚSQUEDA
-  if (filtros.buscar && filtros.buscar.trim() !== "") {
-    const b = filtros.buscar.toLowerCase();
-    resultado = resultado.filter(a =>
-      a.nombre?.toLowerCase().includes(b) ||
-      a.apellido?.toLowerCase().includes(b)
-    );
-  }
-
-  // FECHAS
-  if (filtros.fechaInicio || filtros.fechaFin) {
-    const desde = filtros.fechaInicio
-      ? new Date(`${filtros.fechaInicio}T00:00:00`)
-      : null;
-
-    const hasta = filtros.fechaFin
-      ? new Date(`${filtros.fechaFin}T23:59:59`)
-      : null;
-
-    resultado = resultado.filter(a => {
-      const fecha = new Date(a.creacion);
-      if (desde && fecha < desde) return false;
-      if (hasta && fecha > hasta) return false;
-      return true;
-    });
-  }
-
-
-  return resultado;
+  const link = document.createElement("a");
+  link.href = canvas.toDataURL("image/png");
+  link.download = `QR_${padre.id_padre}.png`;
+  link.click();
 }
-*/
+
+export const generarCodigoQR = () =>
+    crypto
+      .getRandomValues(new Uint8Array(16))
+      .reduce((acc, byte) => acc + byte.toString(16).padStart(2, "0"), "");

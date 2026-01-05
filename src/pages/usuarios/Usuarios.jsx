@@ -15,6 +15,8 @@ export default function Usuarios() {
   useEffect(() => {
     obtenerUsuarios(setUsuarios);
     obtenerRoles(setRoles);
+    console.log(usuarios);
+    
   }, []);
 
   const formFields = [
@@ -36,6 +38,7 @@ export default function Usuarios() {
     { label: "Apellido", key: "apellido" },
     { label: "Correo", key: "correo" },
     { label: "Rol", key: "Rol" },
+    { label: "Fecha de creación", key: "Fecha" },
   ];
 
   return (
@@ -72,7 +75,7 @@ export default function Usuarios() {
               setSelectedUser={setSelectedUser}
               onDelete={() => handleDelete(row, () => obtenerUsuarios(setUsuarios))}
               onEdit={() => setEditingUser(row)}
-              actions={["view", "edit", "delete"]}
+              actions={["edit", "delete"]}
             />
           )}
         />

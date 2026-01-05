@@ -8,30 +8,28 @@ import { filtrarTabla } from "../../functions/general/Functions";
 import { obtenerAlumnos } from "../../functions/EstudiantesActions";
 
 export default function AsistenciaAlumnos() {
-
   const [alumnos, setAlumnos] = useState([]);
   const [alumnosOriginal, setAlumnosOriginal] = useState([]);
-  
-    const manejarCambioFiltros = (f) => {
-      const resultado = filtrarTabla({
-        filtros: f,
-        dataOriginal: alumnosOriginal,
-      });
-  
-      setAlumnos(resultado);
-    };
-  
-    useEffect(() => {
-      obtenerAlumnos((res) => {
-        setAlumnosOriginal(res);
-        setAlumnos(res);
-      });
-    }, []);
-  
+
+  const manejarCambioFiltros = (f) => {
+    const resultado = filtrarTabla({
+      filtros: f,
+      dataOriginal: alumnosOriginal,
+    });
+
+    setAlumnos(resultado);
+  };
+
+  useEffect(() => {
+    obtenerAlumnos((res) => {
+      setAlumnosOriginal(res);
+      setAlumnos(res);
+    });
+  }, []);
 
   const columns = [
     { label: "Nombre", key: "nombre" },
-    { label: "Matricula", key: "matricula" },
+    { label: "Apellido", key: "apellido" },
     { label: "Nivel", key: "Nivel" },
     { label: "Grado", key: "Grado" },
     { label: "Grupo", key: "Grupo" },
@@ -47,7 +45,6 @@ export default function AsistenciaAlumnos() {
         style={{ paddingLeft: "3px" }}
       >
         <div className="row g-4 g-lg-4">
-
           <div className="col-lg-12">
             {/* Filtrar Estudiantes */}
 

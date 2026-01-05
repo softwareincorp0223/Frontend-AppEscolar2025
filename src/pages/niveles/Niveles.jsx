@@ -20,9 +20,6 @@ export default function Niveles() {
 
   const [gradoFiltrado, setGradoFiltrado] = useState([]);
 
-  const [nivelSeleccionado, setNivelSeleccionado] = useState("");
-  const [gradoSeleccionado, setGradoSeleccionado] = useState("");
-
 
   useEffect(() => {
     obtenerNiveles(setNiveles);

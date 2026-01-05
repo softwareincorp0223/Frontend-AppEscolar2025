@@ -66,3 +66,17 @@ export const handleSaveGrupos = async (values, editingGrupo, setEditingGrupo, ob
 
   await obtenerGrupos();
 };
+
+export const obtenerGruposPorGrados = async (sig_grado, setGrados) => {
+  try {
+    //MAS SIMPLE
+    //const where = encodeURIComponent(JSON.stringify({ sid_nivel }));
+    //const data = await InstitutoDataFilter(`grado?where=${where}`);
+    //http://localhost:4000/api/grado?sid_nivel=cgalr
+    const data = await InstitutoDataFilter(`grupo?sid_grado=${sig_grado}`);
+
+    setGrados(data);
+  } catch (error) {
+    showAlert("error", "Error al obtener grados por nivel");
+  }
+};

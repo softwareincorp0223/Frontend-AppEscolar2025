@@ -69,9 +69,7 @@ export const handleSaveGrados = async (values, editingGrado, setEditingGrado, ob
 
 export const obtenerGradosPorNivel = async (sid_nivel, setGrados) => {
   try {
-    const where = encodeURIComponent(JSON.stringify({ sid_nivel }));
-
-    const data = await InstitutoDataFilter(`grado?where=${where}`);
+    const data = await InstitutoDataFilter(`grado?sid_nivel=${sid_nivel}`);
 
     setGrados(data);
   } catch (error) {

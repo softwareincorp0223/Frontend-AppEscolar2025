@@ -29,6 +29,8 @@
     "jquery": "^3.6.2",
     "material-icons": "^1.13.14",
     "pdfmake": "^0.2.20",
+    "qrcode.react": "^4.2.0",
+    "qrcodejs2": "^0.0.2",
     "react": "^19.1.1",
     "react-big-calendar": "^1.19.4",
     "react-dom": "^19.1.1",

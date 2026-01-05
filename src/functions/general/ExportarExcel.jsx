@@ -8,7 +8,6 @@ export const exportarExcel = async (nombreArchivo, encabezados, datos) => {
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet("Datos");
 
-  // Insertar logo
   if (logoBase64) {
     const imageId = workbook.addImage({
       base64: logoBase64,
@@ -22,18 +21,25 @@ export const exportarExcel = async (nombreArchivo, encabezados, datos) => {
     sheet.addRow([]);
   }
 
-  // Agregar encabezados
+  // Encabezados
   const headerRow = sheet.addRow(encabezados);
   headerRow.font = { bold: true };
   headerRow.alignment = { horizontal: "center" };
 
-  // Agregar datos
+  // ✅ SOLUCIÓN GENÉRICA
   datos.forEach((item) => {
-    const fila = encabezados.map((key) => item[key.toLowerCase()] ?? "");
+    const itemNormalizado = Object.fromEntries(
+      Object.entries(item).map(([k, v]) => [k.toLowerCase(), v])
+    );
+
+    const fila = encabezados.map(
+      (key) => itemNormalizado[key.toLowerCase()] ?? ""
+    );
+
     sheet.addRow(fila);
   });
 
-  // Ajustar ancho de columnas
+  // Ajustar columnas
   sheet.columns.forEach((col) => {
     let max = 10;
     col.eachCell({ includeEmpty: true }, (cell) => {

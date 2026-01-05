@@ -9,6 +9,7 @@ const sid_instituto = localStorage.getItem("sid_instituto");
 
 //leer datos de API por instituto
 export async function InstitutoData(consulta) {
+console.log(API_URL + consulta + sid_instituto);
 
   try {
     const res = await axios.get(
@@ -117,8 +118,7 @@ export async function InstitutoDataDelete(endpointOrIds, endpoint, id_field) {
 
     // Caso 1: eliminar varios (array de IDs)
     if (Array.isArray(endpointOrIds)) {
-      console.log("endpointOrIds");
-      url += endpoint; // Cambia "padres" por tu recurso base si usas otro
+      url += endpoint; 
       options.data = { ids: endpointOrIds, idField: id_field };
     }
     // Caso 2: eliminar uno solo (endpoint string)

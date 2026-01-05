@@ -1,32 +1,81 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Layout from "../../components/Layout";
 import Table from "../../components/Table";
 import ActionButtons from "../../components/ActionButtons";
 import TableButtons from "../../components/TableButtons";
 import Filter from "../../components/Filter";
-import { obtenerAlumnos } from "../../functions/EstudiantesActions";
+import {
+  obtenerAlumnos,
+  handleSaveAlumnos,
+  handleDeleteVarios,
+} from "../../functions/EstudiantesActions";
 import { filtrarTabla } from "../../functions/general/Functions";
+import EstudianteDetails from "../../components/details/EstudiantesDetails";
+import Form from "../../components/Form";
+import { obtenerNiveles } from "../../functions/NivelesActions";
+import { obtenerGradosPorNivel } from "../../functions/GradosActions";
+import { obtenerGruposPorGrados } from "../../functions/GruposActions";
+import { obtenerPadres } from "../../functions/PadresActions";
+import { exportarExcel } from "../../functions/general/exportarExcel";
 
 export default function Estudiantes() {
   const [alumnos, setAlumnos] = useState([]);
   const [alumnosOriginal, setAlumnosOriginal] = useState([]);
+  const [selectedEstudiante, setSelectedEstudiante] = useState(null);
+  const [deleteCheck, setDeleteCheck] = useState([]);
+  const [editing, setEditing] = useState(null);
 
-  const manejarCambioFiltros = (f) => {
-    const resultado = filtrarTabla({
-      filtros: f,
-      dataOriginal: alumnosOriginal,
-    });
+  const [niveles, setNiveles] = useState([]);
+  const [grados, setGrados] = useState([]);
+  const [grupos, setGrupos] = useState([]);
+  const [padres, setPadres] = useState([]);
 
-    setAlumnos(resultado);
-  };
+  const [nivelSeleccionado, setNivelSeleccionado] = useState(null);
+  const [gradoSeleccionado, setGradoSeleccionado] = useState(null);
 
+  /* =========================
+     CARGA INICIAL
+  ========================== */
   useEffect(() => {
     obtenerAlumnos((res) => {
       setAlumnosOriginal(res);
       setAlumnos(res);
     });
+    obtenerNiveles(setNiveles);
+    obtenerPadres(setPadres);
   }, []);
 
+  /* =========================
+     SELECTS DEPENDIENTES
+  ========================== */
+  useEffect(() => {
+    if (nivelSeleccionado) {
+      obtenerGradosPorNivel(nivelSeleccionado, setGrados);
+      setGrupos([]);
+      setGradoSeleccionado(null);
+    }
+  }, [nivelSeleccionado]);
+
+  useEffect(() => {
+    if (gradoSeleccionado) {
+      obtenerGruposPorGrados(gradoSeleccionado, setGrupos);
+    }
+  }, [gradoSeleccionado]);
+
+  /* =========================
+     FILTROS
+  ========================== */
+  const manejarCambioFiltros = (f) => {
+    const resultado = filtrarTabla({
+      filtros: f,
+      dataOriginal: alumnosOriginal,
+    });
+    setAlumnos(resultado);
+  };
+
+  /* =========================
+     TABLA
+  ========================== */
   const columns = [
     { label: "Nombre", key: "nombre" },
     { label: "Apellido", key: "apellido" },
@@ -35,28 +84,160 @@ export default function Estudiantes() {
     { label: "Grupo", key: "Grupo" },
   ];
 
+  const deleteVarios = () => {
+    handleDeleteVarios(deleteCheck, setAlumnos);
+  };
+
+  const botonExcel = () => {
+    console.log("Exportando Excel...");
+    const encabezados = ["Nombre", "Apellido", "Nivel", "Grado", "Grupo"];
+    exportarExcel("AlumnosInstituto", encabezados, alumnos);
+  };
+
+  const tableHandlers = {
+    delete: deleteVarios,
+    excel: botonExcel,
+  };
+
+  /* =========================
+     CAMPOS DEL FORMULARIO
+  ========================== */
+  const formFields = useMemo(
+    () => [
+      {
+        name: "nombre",
+        label: "Nombre",
+        type: "text",
+        required: true,
+      },
+      {
+        name: "apellido",
+        label: "Apellido",
+        type: "text",
+        required: true,
+      },
+      {
+        name: "matricula",
+        label: "Matrícula",
+        type: "text",
+        required: true,
+      },
+      {
+        name: "Sexo",
+        label: "Sexo",
+        type: "select",
+        options: ["Masculino", "Femenino", "Otro"].map((r) => ({
+          value: r,
+          label: r,
+        })),
+        required: true,
+      },
+      {
+        name: "Nivel",
+        label: "Nivel",
+        type: "select",
+        options: niveles.map((r) => ({
+          value: r.id_nivel,
+          label: r.nombre,
+        })),
+        required: true,
+        onChange: (e) => setNivelSeleccionado(e.target.value),
+      },
+      {
+        name: "Grado",
+        label: "Grado",
+        type: "select",
+        options: grados.map((g) => ({
+          value: g.id_grado,
+          label: g.nombre,
+        })),
+        required: true,
+        onChange: (e) => setGradoSeleccionado(e.target.value),
+      },
+      {
+        name: "Grupo",
+        label: "Grupo",
+        type: "select",
+        options: grupos.map((g) => ({
+          value: g.id_grupo,
+          label: g.nombre,
+        })),
+        required: true,
+      },
+      {
+        name: "Padre",
+        label: "Padre",
+        type: "select",
+        options: padres.map((r) => ({
+          value: r.id_padre,
+          label: r.nombre + ' ' + r.apellido,
+        })),
+        required: true,
+      },
+      {
+        name: "Foto",
+        label: "Foto",
+        type: "text",
+      },
+    ],
+    [niveles, grados, grupos]
+  );
+
+  /* =========================
+     INITIAL VALUES ESTABLES
+  ========================== */
+  const initialFormValues = useMemo(() => editing || {}, [editing]);
+
   return (
     <Layout>
-      <div className="container-fluid py-4">
+      <div className="container-fluid pb-4">
+        <Form
+          title={editing ? "Editar Estudiante" : "Agregar Estudiante"}
+          fields={formFields}
+          columns={3}
+          initialValues={initialFormValues}
+          onSubmit={(values) =>
+            handleSaveAlumnos(values, editing, setEditing, () =>
+              obtenerAlumnos(setAlumnos)
+            )
+          }
+        />
+
         <Filter
           enabledFilters={["buscar", "nivel", "grado", "grupo"]}
           nombreFiltro="Estudiantes"
           onFilterChange={manejarCambioFiltros}
         />
 
-        <Table
-          id="alumnosTable"
-          title="Alumnos"
-          columns={columns}
-          data={alumnos}
-          showCheckbox={true}
-          renderActions={(row) => (
-            <ActionButtons row={row} actions={["view", "edit", "delete"]} />
-          )}
-          headerButtons={(row) => (
-            <TableButtons row={row} actions={["delete", "excel"]} />
-          )}
-        />
+        {selectedEstudiante ? (
+          <EstudianteDetails
+            estudiante={selectedEstudiante}
+            onClose={() => setSelectedEstudiante(null)}
+          />
+        ) : (
+          <Table
+            id="alumnosTable"
+            title="Alumnos"
+            columns={columns}
+            data={alumnos}
+            showCheckbox
+            renderActions={(row) => (
+              <ActionButtons
+                row={row}
+                setSelectedUser={setSelectedEstudiante}
+                actions={["view", "edit", "delete"]}
+              />
+            )}
+            headerButtons={(row) => (
+              <TableButtons
+                row={row}
+                actions={["delete", "excel"]}
+                onActions={tableHandlers}
+              />
+            )}
+            onSelectionChange={(ids) => setDeleteCheck(ids)}
+          />
+        )}
       </div>
     </Layout>
   );

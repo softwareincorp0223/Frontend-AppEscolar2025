@@ -9,19 +9,19 @@ import "../index.css";
 export default function Table({
   id,
   title,
-  columns, // [{ label: "Nombre", key: "nombre" }, ...]
+  columns,
   data = [],
   renderActions,
   headerButtons,
   showCheckbox = false,
-  onSelectionChange, // 🔹 Nuevo callback opcional
+  onSelectionChange,
 }) {
   const tableRef = useRef(null);
   const dtRef = useRef(null);
   const rootsRef = useRef(new Map());
   const selectedIdsRef = useRef(new Set());
 
-  // 🔹 Maneja selección de checkboxes
+  // 🔹 Maneja selección
   const handleSelect = (checked, idValue) => {
     if (!idValue) return;
 
@@ -29,25 +29,29 @@ export default function Table({
     else selectedIdsRef.current.delete(idValue);
 
     const selected = Array.from(selectedIdsRef.current);
-    console.log("Seleccionados:", selected);
-
-    if (onSelectionChange) onSelectionChange(selected);
+    onSelectionChange?.(selected);
   };
 
-  // 🔹 Inicialización del DataTable
+  // 🔹 Detecta automáticamente la key del ID
+  const getRowIdKey = (rowData) => {
+    if (!rowData || typeof rowData !== "object") return null;
+    if ("id" in rowData) return "id";
+    return Object.keys(rowData).find((k) =>
+      k.toLowerCase().startsWith("id_")
+    );
+  };
+
+  /* =========================
+     INIT DATATABLE
+  ========================== */
   useEffect(() => {
     const $table = $(tableRef.current);
-    const languageConfig = {
-      url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
-    };
 
-    // Configuración de columnas base
     const columnsDef = columns.map((col) => ({
       title: col.label,
       data: col.key,
     }));
 
-    // 🔹 Insertar columna de checkboxes si está activado
     if (showCheckbox) {
       columnsDef.unshift({
         title: "✔",
@@ -57,7 +61,6 @@ export default function Table({
       });
     }
 
-    // 🔹 Insertar columna de acciones si existe renderActions
     if (renderActions) {
       columnsDef.push({
         title: "Acciones",
@@ -67,34 +70,35 @@ export default function Table({
       });
     }
 
-    // Inicializar DataTable
     dtRef.current = $table.DataTable({
-      language: languageConfig,
+      language: {
+        url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
+      },
       autoWidth: false,
       data,
       columns: columnsDef,
+
       createdRow: function (row, rowData, rowIndex) {
+        // 🔹 Detectar ID UNA SOLA VEZ
+        const idKey = getRowIdKey(rowData);
+        const idValue = idKey ? rowData[idKey] : null;
+
         // 🔹 Checkbox
         if (showCheckbox) {
-          const checkboxIndex = 0;
-          const idValue =
-            rowData.id_padre ?? rowData.id_usuario ?? rowData.id ?? ""; // Ajusta según tu campo real
-
-          const $cell = $("td", row).eq(checkboxIndex);
+          const $cell = $("td", row).eq(0);
           $cell.html(
-            `<input type="checkbox" class="row-checkbox" data-id="${idValue}" />`
+            `<input type="checkbox" class="row-checkbox" data-id="${idValue ?? ""}" />`
           );
         }
 
-        // 🔹 Acciones (JSX)
+        // 🔹 Acciones
         if (renderActions) {
           const $lastCell = $("td", row).last();
           const container = document.createElement("div");
           container.className = "d-flex justify-content-end";
           $lastCell.empty().append(container);
 
-          const key =
-            rowData.id_padre ?? rowData.id_usuario ?? rowData.id ?? `row-${rowIndex}`;
+          const key = idValue ?? `row-${rowIndex}`;
 
           if (rootsRef.current.has(key)) {
             try {
@@ -110,10 +114,10 @@ export default function Table({
       },
     });
 
-    // 🔹 Evento delegado para checkboxes
+    // 🔹 Evento delegado
     if (showCheckbox) {
       $table.on("change", "tbody input[type='checkbox']", function (e) {
-        handleSelect(e.target.checked, $(this).attr("data-id"));
+        handleSelect(e.target.checked, $(this).data("id"));
       });
     }
 
@@ -130,38 +134,30 @@ export default function Table({
         dtRef.current = null;
       }
 
-      if (showCheckbox) $table.off("change", "tbody input[type='checkbox']");
+      if (showCheckbox) {
+        $table.off("change", "tbody input[type='checkbox']");
+      }
     };
   }, [id, showCheckbox]);
 
-  // 🔹 Actualizar tabla al cambiar `data`
+  /* =========================
+     UPDATE DATA
+  ========================== */
   useEffect(() => {
-    if (dtRef.current) {
-      // limpiar renders previos
-      rootsRef.current.forEach((root) => {
-        try {
-          root.unmount();
-        } catch {}
-      });
-      rootsRef.current.clear();
+    if (!dtRef.current) return;
 
-      // limpiar selección
-      selectedIdsRef.current.clear();
+    rootsRef.current.forEach((root) => {
+      try {
+        root.unmount();
+      } catch {}
+    });
+    rootsRef.current.clear();
 
-      // actualizar filas
-      dtRef.current.clear();
-      const safeData = Array.isArray(data) ? data : [];
-      dtRef.current.rows.add(safeData);
-      dtRef.current.draw(false);
+    selectedIdsRef.current.clear();
 
-      // volver a asignar evento de checkbox
-      if (showCheckbox) {
-        $(tableRef.current).off("change", "tbody input[type='checkbox']");
-        $(tableRef.current).on("change", "tbody input[type='checkbox']", function (e) {
-          handleSelect(e.target.checked, $(this).attr("data-id"));
-        });
-      }
-    }
+    dtRef.current.clear();
+    dtRef.current.rows.add(Array.isArray(data) ? data : []);
+    dtRef.current.draw(false);
   }, [data]);
 
   return (
@@ -189,7 +185,9 @@ export default function Table({
                   </th>
                 ))}
                 {renderActions && (
-                  <th className="text-end fw-medium text-secondary">Acciones</th>
+                  <th className="text-end fw-medium text-secondary">
+                    Acciones
+                  </th>
                 )}
               </tr>
             </thead>
