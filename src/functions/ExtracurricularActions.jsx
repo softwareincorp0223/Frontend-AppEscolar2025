@@ -14,7 +14,7 @@ export const obtenerExtracurricular = async (setExtracurriculares) => {
 
     setExtracurriculares(extracurricularesApi);
   } catch (error) {
-    showAlert("error", "Error al obtener ciclos");
+    showAlert("error", "Error al obtener Extracurriculares");
   }
 };
 
@@ -31,7 +31,7 @@ export const handleDelete = async (row, obtenerExtracurricular) => {
 
 export const handleSave = async (values, editingExtracurricular, setEditingExtracurricular, obtenerExtracurricular) => {
   const sid_instituto = localStorage.getItem("sid_instituto");
-  const fecha = fechaFormateada();
+  const fecha = fechaFormateada(new Date());
 
   const payload = {
     id_extracurricular: editingExtracurricular ? editingExtracurricular.id_extracurricular : null,
@@ -39,7 +39,7 @@ export const handleSave = async (values, editingExtracurricular, setEditingExtra
     sid_instituto
   };
 
-   console.log("Payload enviado:", payload);
+  console.log("Payload enviado:", payload);
 
   if (editingExtracurricular) {
     await InstitutoDataUpdate(`extracurricular/${editingExtracurricular.id_extracurricular}`, payload);
@@ -55,7 +55,7 @@ export const handleSave = async (values, editingExtracurricular, setEditingExtra
 
 export const handleSaveExtracurricularAlumno = async (values, alumno, obtenerAlumnosExtracurricular) => {
 
-  const fecha = fechaFormateada();
+  const fecha = fechaFormateada(new Date());
 
   const payload = {
     id_alumno_extracurricular: null,
@@ -95,4 +95,28 @@ export const handleDeleteAlumnoExtracurricular = async (row, obtenerAlumnosExtra
   await InstitutoDataDelete(`alumno_extracurricular/${row.id_alumno_extracurricular}`);
   await obtenerAlumnosExtracurricular(); // refrescar tabla
   showAlert("success", "Alumno eliminado correctamente");
+};
+
+export const obtenerExtracurricularesExcel = async (setExtracurricularesExcel) => {
+  try {
+    const data = await InstitutoData(
+      "alumno_extracurricular/excel/"
+    );
+
+    const formateados = data.map((item) => ({
+      ...item,
+      Nombre: item.Alumno?.nombre || "Sin Nombre",
+      Apellido: item.Alumno?.apellido || "Sin Apellido",
+      Matricula: item.Alumno?.matricula || "Sin Matricula",
+      Nivel: item.Alumno?.Nivel?.nombre || "Sin Nivel",
+      Grado: item.Alumno?.Grado?.nombre || "Sin Grado",
+      Grupo: item.Alumno?.Grupo?.nombre || "Sin Grupo",
+      Extracurricular: item.Extracurricular?.nombre || "Sin Extracurricular",
+    }));
+
+    setExtracurricularesExcel(formateados);
+  } catch (error) {
+    console.error(error);
+    showAlert("error", "Error al obtener extracurriculares");
+  }
 };

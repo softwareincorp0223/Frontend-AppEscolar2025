@@ -50,7 +50,7 @@ export const handleSaveGrupos = async (values, editingGrupo, setEditingGrupo, ob
 
   const payload = {
     id_grupo: editingGrupo ? editingGrupo.id_grupo : null,
-    sid_grado: values.sid_grado,
+    sid_grado: values.Grado,
     nombre:values.nombre,
   };
 

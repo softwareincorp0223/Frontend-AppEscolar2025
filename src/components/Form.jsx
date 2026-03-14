@@ -13,21 +13,12 @@ export default function Form({
   // 🔹 Actualizar valores cuando cambien los initialValues
 
   useEffect(() => {
-    if (initialValues) {
+    if (initialValues && Object.keys(initialValues).length > 0) {
       setFormValues(initialValues);
+    } else {
+      setFormValues({});
     }
   }, [initialValues]);
-
-  //nuevo
-  // const initialized = React.useRef(false);
-
-  // useEffect(() => {
-  //   if (initialValues && Object.keys(initialValues).length > 0) {
-  //     setFormValues(initialValues);
-  //   } else {
-  //     setFormValues({});
-  //   }
-  // }, [initialValues]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -143,11 +134,11 @@ export default function Form({
                   })
                 ) : field.type === "select" ? (
                   <select
-                    className={`form-select ${
-                      errors[field.name] ? "is-invalid" : ""
-                    }`}
+                    className={`form-select ${errors[field.name] ? "is-invalid" : ""
+                      }`}
                     name={field.name}
                     value={formValues[field.name] ?? ""}
+                    disabled={field.disabled}
                     onChange={(e) => {
                       handleChange(e);
                       field.onChange && field.onChange(e);
@@ -160,11 +151,37 @@ export default function Form({
                       </option>
                     ))}
                   </select>
+                ) : field.type === "checkbox" ? (
+                  //  CHECKBOX (caso especial)
+                  <div className="form-check">
+                    <input
+                      className={`form-check-input ${errors[field.name] ? "is-invalid" : ""
+                        }`}
+                      type="checkbox"
+                      name={field.name}
+                      checked={!!formValues[field.name]}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+
+                        // 1️⃣ Actualiza el estado interno del Form
+                        setFormValues((prev) => ({
+                          ...prev,
+                          [field.name]: checked,
+                        }));
+
+                        // 2️⃣ Ejecuta el onChange personalizado si existe
+                        if (field.onChange) {
+                          field.onChange(e);
+                        }
+                      }}
+                    />
+                  </div>
+
                 ) : (
                   <input
-                    className={`form-control ${
-                      errors[field.name] ? "is-invalid" : ""
-                    }`}
+                    className={`form-control ${errors[field.name] ? "is-invalid" : ""
+                      }`}
+                    type={field.type || "text"}
                     name={field.name}
                     placeholder={field.placeholder}
                     value={formValues[field.name] ?? ""}
@@ -181,9 +198,8 @@ export default function Form({
 
           <div className="text-end">
             <button
-              className={`btn ${
-                title.includes("Editar") ? "btn-primary" : "btn-success"
-              } py-2`}
+              className={`btn ${title.includes("Editar") ? "btn-primary" : "btn-success"
+                } py-2`}
               type="submit"
             >
               {title.includes("Editar") ? "Actualizar" : "Guardar"}

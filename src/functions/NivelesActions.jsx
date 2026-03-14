@@ -34,7 +34,7 @@ export const handleSave = async (values, editingNivel, setEditingNivel, obtenerN
     id_nivel: editingNivel ? editingNivel.id_nivel : null,
     sid_instituto,
     nombre: values.nombre,
-    orden: '1',
+    // orden: '1',
   };
 
    console.log("Payload enviado:", payload);

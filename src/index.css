@@ -272,6 +272,112 @@ body {
   transition: transform 0.3s ease;
 }
 
+.carousel-item {
+  transition: transform .8s ease-in-out;
+}
+.carousel-indicators [data-bs-target] {
+  /* background-color: #0d6efd; */
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.card-body .d-flex:not(:last-child){
+  border-bottom:1px solid #f1f3f5;
+  padding-bottom:16px;
+}
+
+.dashboard-card{
+  transition:.25s;
+}
+.dashboard-card:hover{
+  transform:translateY(-4px);
+  box-shadow:0 20px 30px rgba(0,0,0,.08);
+}
+
+.icon-box{
+  width:42px;
+  height:42px;
+  border-radius:12px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.event-slide{
+  height:180px;
+  background-size:cover;
+  background-position:center;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  color:white;
+  text-align:center;
+  background-blend-mode:darken;
+  background-color:rgba(0,0,0,.55);
+}
+
+.activity-item{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding:12px 0;
+  border-bottom:1px solid #f1f3f5;
+}
+
+.activity-icon{
+  width:42px;
+  height:42px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+#carouselEventos{
+  height:100%;
+  min-height:190px;
+}
+
+.carousel-inner,
+.carousel-item{
+  height:100%;
+}
+
+.event-slide{
+  width:100%;
+  height:100%;
+  min-height:190px;
+  background-size:cover;
+  background-position:center;
+  background-repeat:no-repeat;
+
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  text-align:center;
+
+  color:white;
+  padding:20px;
+
+  background-blend-mode:darken;
+  background-color:rgba(0,0,0,.55);
+}
+
+.carousel-indicators [data-bs-target]{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background-color:white;
+  opacity:.5;
+}
+
+.carousel-indicators .active{
+  opacity:1;
+}
+
 /* 🔹 Móviles: ocupar todo el ancho y ocultar sidebar */
 @media (max-width: 991px) {
 

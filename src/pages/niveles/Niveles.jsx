@@ -1,14 +1,15 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import Layout from "../../components/Layout";
 import Table from "../../components/Table";
 import Form from "../../components/Form";
 import ActionButtons from "../../components/ActionButtons";
 import { obtenerNiveles, handleDelete, handleSave } from "../../functions/NivelesActions";
-import { obtenerGrados, handleDeleteGrados, handleSaveGrados } from "../../functions/GradosActions";
+import { obtenerGrados, handleDeleteGrados, handleSaveGrados, obtenerGradosPorNivel } from "../../functions/GradosActions";
 import { obtenerGrupos, handleDeleteGrupos, handleSaveGrupos } from "../../functions/GruposActions";
-import { SelectField } from "../../functions/general/Select";
 
 export default function Niveles() {
+
+  // TABLAS
   const [niveles, setNiveles] = useState([]);
   const [editingNivel, setEditingNivel] = useState(null);
 
@@ -18,8 +19,12 @@ export default function Niveles() {
   const [grupos, setGrupos] = useState([]);
   const [editingGrupo, setEditingGrupo] = useState(null);
 
-  const [gradoFiltrado, setGradoFiltrado] = useState([]);
+  // FORM GRUPOS (dependientes)
+  const [gradosPorNivel, setGradosPorNivel] = useState([]);
+  const [gruposPorGrado, setGruposPorGrado] = useState([]);
 
+  // selects
+  const [nivelSeleccionado, setNivelSeleccionado] = useState(null);
 
   useEffect(() => {
     obtenerNiveles(setNiveles);
@@ -27,25 +32,28 @@ export default function Niveles() {
     obtenerGrupos(setGrupos);
   }, []);
 
-  // 🔹 Filtrar grados según nivel
-
-  const filtrarGradosPorNivel = (idNivel) => {
-    const filtrados = grados.filter(
-      (g) => String(g.sid_nivel) === String(idNivel)
-    );
-    setGradoFiltrado(filtrados);
-  };
-
-  // 🔹 sincronizar edición
+  useEffect(() => {
+    if (nivelSeleccionado) {
+      obtenerGradosPorNivel(nivelSeleccionado, setGradosPorNivel);
+    } else {
+      setGradosPorNivel([]);
+    }
+  }, [nivelSeleccionado]);
 
 
   useEffect(() => {
-    if (editingGrupo && grados.length > 0) {
-      // setNivelSeleccionado(editingGrupo.sid_nivel);
-      filtrarGradosPorNivel(editingGrupo.Grado.sid_nivel);
-      // setGradoSeleccionado(editingGrupo.sid_grado);
-    }
-  }, [editingGrupo, grados]);
+    if (!editingGrupo) return;
+
+    const nivel = editingGrupo.Grado?.sid_nivel;
+
+    setNivelSeleccionado(nivel);
+
+    obtenerGradosPorNivel(nivel, (res) => {
+      setGradosPorNivel(res);
+    });
+
+  }, [editingGrupo]);
+
 
   const formFieldsNiveles = [
     {
@@ -77,68 +85,40 @@ export default function Niveles() {
     },
   ];
 
-  // FORM DE GRUPOS — CORREGIDO
+  // FORM DE GRUPOS
 
-  const formFieldsGrupo = [
-    {
-      name: "sid_nivel",
-      label: "Selecciona un nivel",
-      type: "custom",
-      component: (props) => (
-        <SelectField
-          name={props.name}
-          value={props.value}
-          error={props.error}
-          options={niveles.map((r) => ({
-            value: String(r.id_nivel),
-            label: r.nombre,
-          }))}
-          onChange={(value) => {
-            // siempre primero el form
-            props.onChange(value);
 
-            // lógica dependiente
-            filtrarGradosPorNivel(value);
-
-            // limpiar grado SOLO en creación
-            if (!editingGrupo) {
-              props.setFormValues((prev) => ({
-                ...prev,
-                sid_grado: "",
-              }));
-            }
-          }}
-        />
-      ),
-      required: true,
-    },
-    {
-      name: "sid_grado",
-      label: "Selecciona un grado",
-      type: "custom",
-      component: (props) => (
-        <SelectField
-          name={props.name}
-          value={props.value}
-          error={props.error}
-          options={gradoFiltrado.map((r) => ({
-            value: String(r.id_grado),
-            label: r.nombre,
-          }))}
-          onChange={props.onChange}
-          disabled={gradoFiltrado.length === 0}
-        />
-      ),
-      required: true,
-    },
-    {
-      name: "nombre",
-      label: "Grupo",
-      type: "text",
-      placeholder: "Ej. A",
-      required: true,
-    },
-  ];
+  const formFieldsGrupo = useMemo(
+    () => [
+      {
+        name: "Nivel",
+        label: "Nivel",
+        type: "select",
+        options: niveles.map((r) => ({
+          value: r.id_nivel,
+          label: r.nombre,
+        })),
+        required: true,
+        onChange: (e) => setNivelSeleccionado(e.target.value),
+      },
+      {
+        name: "Grado",
+        label: "Grado",
+        type: "select",
+        options: gradosPorNivel.map((g) => ({
+          value: g.id_grado,
+          label: g.nombre,
+        })),
+        required: true,
+      },
+      {
+        name: "nombre",
+        label: "Grupo",
+        type: "input",
+      },
+    ],
+    [niveles, gradosPorNivel]
+  );
 
 
   const columnsNiveles = [{ label: "Nombre", key: "nombre" }];
@@ -152,8 +132,6 @@ export default function Niveles() {
     { label: "Nombre", key: "nombre" },
   ];
 
-
-  console.log(editingGrupo);
   return (
     <Layout>
       <div className="container-fluid py-4 py-lg-4">
@@ -239,12 +217,13 @@ export default function Niveles() {
               initialValues={
                 editingGrupo
                   ? {
-                    sid_nivel: editingGrupo.Grado.sid_nivel,
-                    sid_grado: editingGrupo.sid_grado,
+                    Nivel: editingGrupo.Grado?.sid_nivel,
+                    Grado: editingGrupo.sid_grado,
                     nombre: editingGrupo.nombre,
                   }
-                  : null
+                  : {}
               }
+
             />
             <Table
               title="Grupos"

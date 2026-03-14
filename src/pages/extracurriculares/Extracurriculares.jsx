@@ -5,17 +5,29 @@ import Form from "../../components/Form";
 import ActionButtons from "../../components/ActionButtons";
 import TableButtons from "../../components/TableButtons";
 import ExtracurricularDetails from "../../components/details/ExtracurricularDetails";
-import { obtenerExtracurricular, handleDelete, handleSave } from "../../functions/ExtracurricularActions";
+import { obtenerExtracurricular, handleDelete, handleSave, obtenerExtracurricularesExcel } from "../../functions/ExtracurricularActions";
+import { exportarExcel } from "../../functions/general/exportarExcel";
 
 export default function Extracurriculares() {
   const [extracurriculares, setExtracurriculares] = useState([]);
+  const [extracurricularesExcel, setExtracurricularesExcel] = useState([]);
   const [editingExtracurricular, setEditingExtracurricular] = useState(null);
   const [selectedExtra, setSelectedExtra] = useState(null);
 
-
   useEffect(() => {
     obtenerExtracurricular(setExtracurriculares);
+    obtenerExtracurricularesExcel(setExtracurricularesExcel);
   }, []);
+
+  const botonExcel = () => {
+    console.log("Exportando Excel...");
+    const encabezados = ["Nombre", "Apellido", "Matricula", "Nivel", "Grado", "Grupo", "Extracurricular"];
+    exportarExcel("ExtracurricularInstituto", encabezados, extracurricularesExcel);
+  };
+  console.log(extracurricularesExcel);
+  const tableHandlers = {
+    excel: botonExcel,
+  };
 
   const formExtracurricular = [
     { name: "nombre", label: "Extracurricular", type: "text", placeholder: "Ej. Futbol", required: true },
@@ -59,7 +71,10 @@ export default function Extracurriculares() {
             />
           )}
           headerButtons={(row) => (
-            <TableButtons row={row} actions={["excel"]} />
+            <TableButtons row={row}
+              actions={["excel"]}
+              onActions={tableHandlers}
+            />
           )}
         />
       )}

@@ -1,265 +1,227 @@
+import { useEffect } from "react";
 import React from "react";
 import Layout from "../../components/Layout";
-import { PieChart } from "@mui/x-charts/PieChart";
+import { Carousel } from "bootstrap";
+import imagenFondo from "../../assets/fondo.png";
+import imagenFondo2 from "../../assets/fondo2.png";
+import imagenFondo3 from "../../assets/fondo3.png";
+import { BarChart } from "@mui/x-charts/BarChart";
+import { Box } from "@mui/material";
+
+
 
 export default function Estadisticas() {
 
-  const data = [
-    { id: 0, value: 45, label: "Leidos" },
-    { id: 1, value: 55, label: "No Leidos" },
-  ];
-  const padres = [
-    { id: 0, value: 60, label: "Padres" },
-    { id: 1, value: 40, label: "Alumnos" },
-  ];
-  const cantidad = [
-    { id: 0, value: 25, label: "Entradas" },
-    { id: 1, value: 75, label: "Salidas" },
-  ];
+  useEffect(() => {
+    const carouselElement = document.querySelector("#carouselEventos");
+
+    if (carouselElement) {
+      new Carousel(carouselElement, {
+        interval: 4000,
+        ride: "carousel",
+        pause: false
+      });
+    }
+  }, []);
+
   return (
     <Layout>
-      <div className="container mt-2"></div>
+      <div className="container py-3">
 
-      {/* Contenido */}
-      <div
-        className="container-fluid py-4 py-lg-4"
-        style={{ paddingLeft: "3px" }}
-      >
-        <div className="row g-4 mb-4">
-          {/* Número de Mensajes */}
-          <div className="col-lg-4 col-md-6 mt-4 mb-4">
-            <div
-              className="card border-0 shadow-sm position-relative"
-              style={{
-                borderRadius: "1rem",
-                overflow: "visible",
-                backgroundColor: "#fff",
-                boxShadow: "0 8px 20px rgba(0, 0, 0, 0.08)",
-              }}
-            >
-              {/* Tarjeta superior flotante con la gráfica */}
-              <div
-                className="position-absolute start-50 translate-middle-x"
-                style={{
-                  width: "92%",
-                  borderRadius: "1rem",
-                  backgroundColor: "#f8f9fa",
-                  boxShadow: "0 4px 10px rgba(0, 66, 128, 0.3)",
-                  top: "-20px", // 🔹 sube la tarjeta un poco
-                  zIndex: 150,
-                  transition: "all 0.3s ease",
-                }}
-              >
-                <div className="p-4 d-flex flex-column align-items-center">
-                  <div className="chart mb-2">
-                    <PieChart
-                      series={[
-                        {
-                          data,
-                          paddingAngle: 2,
-                          cornerRadius: 4,
-                          animation: {
-                            duration: 1500,
-                            easing: "ease-in-out", // suave al iniciar y terminar
-                          },
-                        },
-                      ]}
-                      colors={["#004280", "#bebebd"]}
-                      width={280}
-                      height={180}
-                      slotProps={{
-                        legend: { hidden: false },
-                      }}
-                    />
+        <div className="row g-3 mb-4">
+
+          {/* CARD 1 */}
+          <div className="col-12 col-md-6 col-xl-4 d-flex">
+            <div className="card border-0 shadow-sm rounded-4 flex-fill dashboard-card">
+              <div className="card-body">
+
+                <div className="d-flex justify-content-between mb-2">
+                  <div className="icon-box bg-primary-subtle text-primary">
+                    <span className="material-icons">mail</span>
+                  </div>
+
+                  <div className="text-success small fw-semibold d-flex align-items-center">
+                    +2.5%
+                    <span className="material-icons ms-1">trending_up</span>
                   </div>
                 </div>
-              </div>
 
-              {/* Tarjeta inferior blanca */}
-              <div
-                className="card-body text-center bg-white"
-                style={{
-                  borderRadius: "1rem",
-                  paddingTop: "250px", // 🔹 ajusta para que haya espacio visual suficiente
-                }}
-              >
-                <h6
-                  className="mb-0 fw-bold"
-                  style={{ color: "#004280", fontWeight: 900 }}
-                >
-                  Número de Mensajes
-                </h6>
+                <p className="text-muted small mb-0">TOTAL MENSAJES</p>
+
+                <div className="d-flex align-items-center justify-content-between mt-2">
+                  <h2 className="fw-bold mb-0">1,245</h2>
+
+                  <Box sx={{ width: { xs: 120, md: 160 } }}>
+                    <BarChart
+                      series={[{ data: [4, 6, 5, 8, 7, 9, 6], color: "#22c55e", borderRadius: 6 }]}
+                      height={70}
+                      xAxis={[{ scaleType: "band", data: ["L", "M", "M", "J", "V", "S", "D"], disableLine: true, disableTicks: true, tickLabelStyle: { display: "none" } }]}
+                      yAxis={[{ disableLine: true, disableTicks: true, tickLabelStyle: { display: "none" } }]}
+                      grid={{ horizontal: false, vertical: false }}
+                      margin={{ top: 5, bottom: 5 }}
+                    />
+                  </Box>
+                </div>
+
               </div>
             </div>
           </div>
 
+          {/* CARD 2 */}
+          <div className="col-12 col-md-6 col-xl-4 d-flex">
+            <div className="card border-0 shadow-sm rounded-4 flex-fill dashboard-card">
+              <div className="card-body">
 
-          {/* Cantidad de Padres y Alumnos */}
-          <div className="col-lg-4 col-md-6 mt-4 mb-4">
-            <div
-              className="card border-0 shadow-sm position-relative"
-              style={{
-                borderRadius: "1rem",
-                overflow: "visible",
-                backgroundColor: "#fff",
-                boxShadow: "0 10px 20px rgba(0, 0, 0, 0.08)",
-              }}
-            >
-              {/* Tarjeta superior flotante con la gráfica */}
-              <div
-                className="position-absolute start-50 translate-middle-x"
-                style={{
-                  width: "92%",
-                  borderRadius: "1rem",
-                  backgroundColor: "#f8f9fa",
-                  boxShadow: "0 4px 10px rgba(67, 178, 159, 0.3)",
-                  top: "-20px", // 🔹 sube la tarjeta un poco
-                  zIndex: 150,
-                  transition: "all 0.3s ease",
-                }}
-              >
-                <div className="p-4 d-flex flex-column align-items-center">
-                  <div className="chart mb-2">
-                    <PieChart
-                      series={[
-                        {
-                          data: padres,
-                          paddingAngle: 2,
-                          cornerRadius: 4,
-                          startAngle: -90, // empieza desde arriba
-                          endAngle: 270, // gira completo
-                          animation: {
-                            duration: 1800,
-                            easing: "cubic-bezier(0.34, 1.56, 0.64, 1)", // rebote dinámico
-                          },
-                        },
-                      ]}
-                      colors={["#43B29F", "#DCDCDB"]}
-                      width={280}
-                      height={180}
-                      slotProps={{
-                        legend: { hidden: false },
-                      }}
-                    />
+                <div className="d-flex justify-content-between mb-2">
+                  <div className="icon-box bg-success-subtle text-success">
+                    <span className="material-icons">groups</span>
+                  </div>
+
+                  <div className="text-danger small fw-semibold d-flex align-items-center">
+                    -1.2%
+                    <span className="material-icons ms-1">trending_down</span>
                   </div>
                 </div>
-              </div>
 
-              {/* Tarjeta inferior blanca */}
-              <div
-                className="card-body text-center bg-white"
-                style={{
-                  borderRadius: "1rem",
-                  paddingTop: "250px", // 🔹 ajusta para que haya espacio visual suficiente
-                }}
-              >
-                <h6
-                  className="mb-0 fw-bold"
-                  style={{ color: "#20554C", fontWeight: 900 }}
-                >
-                  Cantidad de Padres y Alumnos
-                </h6>
+                <p className="text-muted small mb-0">TOTAL PROFESORES</p>
+                <h2 className="fw-bold mt-2 mb-0">86</h2>
+
               </div>
             </div>
           </div>
 
-          {/* Cantidad de Entradas y Salidas */}
-          <div className="col-lg-4 col-md-6 mt-4 mb-4">
+          {/* CARD 3 EVENTOS */}
+          <div className="col-12 col-md-12 col-xl-4 d-flex">
             <div
-              className="card border-0 shadow-sm position-relative"
-              style={{
-                borderRadius: "1rem",
-                overflow: "visible",
-                backgroundColor: "#fff",
-                boxShadow: "0 10px 20px rgba(0, 0, 0, 0.08)",
-              }}
+              id="carouselEventos"
+              className="carousel slide shadow-sm rounded-4 overflow-hidden flex-fill"
+              data-bs-ride="carousel"
+              data-bs-interval="6000"
             >
-              {/* Tarjeta superior flotante con la gráfica */}
-              <div
-                className="position-absolute start-50 translate-middle-x"
-                style={{
-                  width: "92%",
-                  borderRadius: "1rem",
-                  backgroundColor: "#f8f9fa",
-                  boxShadow: "0 4px 10px rgba(145, 69, 18, 0.3)",
-                  top: "-20px", // 🔹 sube la tarjeta un poco
-                  zIndex: 150,
-                  transition: "all 0.3s ease",
-                }}
-              >
-                <div className="p-4 d-flex flex-column align-items-center">
-                  <div className="chart mb-2">
-                    <PieChart
-                      series={[
-                        {
-                          data: cantidad,
-                          paddingAngle: 2,
-                          cornerRadius: 4,
-                          startAngle: -90, // empieza desde arriba
-                          endAngle: 270, // gira completo
-                          animation: {
-                            duration: 1800,
-                            easing: "cubic-bezier(0.34, 1.56, 0.64, 1)", // rebote dinámico
-                          },
-                        },
-                      ]}
-                      colors={["#DB681D", "#DEDEDE"]}
-                      width={280}
-                      height={180}
-                      slotProps={{
-                        legend: { hidden: false },
-                      }}
-                    />
-                  </div>
-                </div>
+
+              {/* INDICADORES */}
+              <div className="carousel-indicators">
+                <button type="button" data-bs-target="#carouselEventos" data-bs-slide-to="0" className="active"></button>
+                <button type="button" data-bs-target="#carouselEventos" data-bs-slide-to="1"></button>
+                <button type="button" data-bs-target="#carouselEventos" data-bs-slide-to="2"></button>
               </div>
 
-              {/* Tarjeta inferior blanca */}
-              <div
-                className="card-body text-center bg-white"
-                style={{
-                  borderRadius: "1rem",
-                  paddingTop: "250px", // 🔹 ajusta para que haya espacio visual suficiente
-                }}
-              >
-                <h6
-                  className="mb-0 fw-bold"
-                  style={{ color: "#DB681D", fontWeight: 900 }}
-                >
-                  Cantidad de Entradas y Salidas por Fecha
-                </h6>
+              <div className="carousel-inner h-100">
+
+                {/* SLIDE 1 */}
+                <div className="carousel-item active h-100">
+                  <div
+                    className="event-slide"
+                    style={{ backgroundImage: `url(${imagenFondo})` }}
+                  >
+                    <span className="material-icons">event_busy</span>
+                    <h6>Sin eventos programados</h6>
+                    <p>No hay actividades registradas</p>
+                  </div>
+                </div>
+
+                {/* SLIDE 2 */}
+                <div className="carousel-item h-100">
+                  <div
+                    className="event-slide"
+                    style={{ backgroundImage: `url(${imagenFondo2})` }}
+                  >
+                    <span className="material-icons">school</span>
+                    <h6>Inicio de semestre</h6>
+                    <p>15 de Agosto</p>
+                  </div>
+                </div>
+
+                {/* SLIDE 3 */}
+                <div className="carousel-item h-100">
+                  <div
+                    className="event-slide"
+                    style={{ backgroundImage: `url(${imagenFondo3})` }}
+                  >
+                    <span className="material-icons">emoji_events</span>
+                    <h6>Olimpiada Matemáticas</h6>
+                    <p>22 de Agosto</p>
+                  </div>
+                </div>
+
               </div>
+
             </div>
           </div>
+
         </div>
-        <div className="row g-4 mb-4">
-          <div className="col-lg-4">
-            <div className="card shadow-sm rounded-3">
-              <div className="card-body d-flex flex-column align-items-center p-4">
-                <div
-                  className="bg-light rounded-circle mb-3"
-                  style={{ width: "150px", height: "150px" }}
-                >
-                  {/* Aquí iría la gráfica */}
-                </div>
-                <h2 className="fs-6 fw-bold text-center">Otros Estadisticas</h2>
+
+        {/* ===================== FILA 2 ===================== */}
+        <div className="row g-3">
+
+          {/* ACTIVIDAD */}
+          <div className="col-12 col-lg-7">
+            <div className="card border-0 shadow-sm rounded-4">
+              <div className="card-body">
+                <h5 className="fw-bold mb-4">Actividad Reciente</h5>
+
+                {[
+                  { icon: "mail", color: "primary", title: "Nuevo mensaje enviado", text: "Aviso a padres de 3°B", time: "Hace 5 min" },
+                  { icon: "assignment", color: "warning", title: "Nueva tarea publicada", text: "Proyecto Sistema Solar", time: "Hace 2 horas" },
+                  { icon: "verified", color: "success", title: "Calificaciones validadas", text: "Primer bimestre cerrado", time: "Hoy 10:24" },
+                  { icon: "person_add", color: "secondary", title: "Alumno registrado", text: "Ingreso al grupo 2°C", time: "Ayer" }
+                ].map((a, i) => (
+                  <div key={i} className="activity-item">
+                    <div className={`activity-icon bg-${a.color}-subtle text-${a.color}`}>
+                      <span className="material-icons">{a.icon}</span>
+                    </div>
+
+                    <div className="flex-grow-1">
+                      <div className="fw-semibold">{a.title}</div>
+                      <div className="text-muted small">{a.text}</div>
+                    </div>
+
+                    <div className="text-muted small">{a.time}</div>
+                  </div>
+                ))}
+
               </div>
             </div>
           </div>
-          <div className="col-lg-8">
-            <div className="card shadow-sm rounded-3">
-              <div className="card-body d-flex flex-column align-items-center p-4">
-                <div
-                  className="bg-light rounded-circle mb-3"
-                  style={{ width: "150px", height: "150px" }}
-                >
-                  {/* Aquí iría la gráfica */}
+
+          {/* CARD ACCION + GRAFICA */}
+          <div className="col-12 col-lg-5">
+            <div className="card border-0 shadow-sm rounded-4 h-100">
+              <div className="card-body d-flex flex-column">
+
+                <h5 className="fw-bold mb-3">Mensajes rápidos</h5>
+
+                <p className="text-muted small">
+                  Envía comunicados a alumnos o padres de forma inmediata.
+                </p>
+
+                <div className="d-grid gap-2 mb-4">
+                  <button className="btn btn-primary rounded-3">
+                    <span className="material-icons me-2">add</span>
+                    Nuevo mensaje
+                  </button>
+
+                  {/* <button className="btn btn-light border rounded-3">
+                    Ver mensajes
+                  </button> */}
                 </div>
-                <h2 className="fs-6 fw-bold text-center">Cantidad de Materias y Tareas</h2>
+
+                <div className="mt-auto">
+                  <p className="small text-muted mb-2">Actividad semanal</p>
+
+                  <BarChart
+                    series={[{ data: [12, 18, 15, 22, 19, 25, 20], color: "#3b82f6", borderRadius: 6 }]}
+                    height={120}
+                    xAxis={[{ scaleType: "band", data: ["L", "M", "M", "J", "V", "S", "D"] }]}
+                  />
+                </div>
+
               </div>
             </div>
           </div>
+
         </div>
+
       </div>
     </Layout>
   );
