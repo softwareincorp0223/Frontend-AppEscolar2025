@@ -13,12 +13,10 @@ export default function Form({
   // 🔹 Actualizar valores cuando cambien los initialValues
 
   useEffect(() => {
-    if (initialValues && Object.keys(initialValues).length > 0) {
-      setFormValues(initialValues);
-    } else {
-      setFormValues({});
-    }
-  }, [initialValues]);
+  if (initialValues && Object.keys(initialValues).length > 0) {
+    setFormValues(initialValues);
+  }
+}, [initialValues]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

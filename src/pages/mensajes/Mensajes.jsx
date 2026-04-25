@@ -7,18 +7,29 @@ import $ from "jquery";
 import ActionButtons from "../../components/ActionButtons";
 import TableButtons from "../../components/TableButtons";
 import Filter from "../../components/Filter";
-
-// import React, { useState } from "react";
-// import Layout from "../../components/Layout";
-// import { CKEditor } from "@ckeditor/ckeditor5-react";
-// import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
-// import Table from "../../components/Table";
-// import TableButtons from "../../components/TableButtons";
-// import ActionButtons from "../../components/ActionButtons";
-// import Filter from "../../components/Filter";
-// import "material-icons/iconfont/material-icons.css";
+import { obtenerMensajes } from "../../functions/MensajeActions";
+import { filtrarTabla } from "../../functions/general/Functions";
+import { obtenerTipoMensajes } from "../../functions/MensajeTipoActions";
+import { obtenerNiveles } from "../../functions/NivelesActions";
+import { obtenerGradosPorNivel } from "../../functions/GradosActions";
+import { obtenerGruposPorGrados } from "../../functions/GruposActions";
+import CustomSelect from "../../components/CustomSelect";
+import { obtenerAlumnos } from "../../functions/EstudiantesActions";
+import { obtenerExtracurricular } from "../../functions/ExtracurricularActions";
 
 export default function Mensaje() {
+  const [mensajes, setMensajes] = useState([]);
+  const [mensajesOriginal, setMensajesOriginal] = useState([]);
+  const [mensajesTipo, setMensajesTipo] = useState([]);
+  const [niveles, setNiveles] = useState([]);
+  const [grados, setGrados] = useState([]);
+  const [grupos, setGrupos] = useState([]);
+  const [alumnos, setAlumnos] = useState([]);
+  const [extracurriculares, setExtracurriculares] = useState([]);
+
+  const [nivelSeleccionado, setNivelSeleccionado] = useState(null);
+  const [gradoSeleccionado, setGradoSeleccionado] = useState(null);
+
   const [formData, setFormData] = useState({
     receptor: "0",
     sid_tipo: "0",
@@ -36,48 +47,64 @@ export default function Mensaje() {
     repetir_mensaje: false,
     periodo_mensaje: "",
     fecha_fin_mensaje: "",
-    archivos: [null], // empieza con un campo
+    archivos: [null], 
     urls: [""],
+    repetir_mensaje: false,
   });
 
-  const datamensajes = useMemo(
-    () => [
-      {
-        mensaje_id: "1",
-        seleccionar: "input",
-        receptor: "Primaria secundaria",
-        tipo_de_envio: "AB1234",
-        num_destinatarios: "Primaria",
-        asunto: "Segundo",
-        fecha: "Segundo",
-        programado: "A",
-      },
-      {
-        mensaje_id: "2",
-        seleccionar: "input",
-        receptor: "Primaria secundaria",
-        tipo_de_envio: "AB1234",
-        num_destinatarios: "Primaria",
-        asunto: "Segundo",
-        fecha: "Segundo",
-        programado: "A",
-      },
-    ],
-    []
-  );
+  const manejarMensajesFiltros = (f) => {
+    const resultado = filtrarTabla({
+      filtros: f,
+      dataOriginal: mensajesOriginal,
+    });
+    setMensajes(resultado);
+  };
+
+  useEffect(() => {
+    obtenerMensajes((res) => {
+      setMensajesOriginal(res);
+      setMensajes(res);
+    });
+    obtenerNiveles(setNiveles);
+    obtenerTipoMensajes(setMensajesTipo);
+    obtenerAlumnos(setAlumnos);
+    obtenerExtracurricular(setExtracurriculares);
+  }, []);
+  console.log("mensajes:", mensajes);
+
+  useEffect(() => {
+    if (formData.sid_nivel !== "0") {
+      obtenerGradosPorNivel(formData.sid_nivel, setGrados);
+      setGrupos([]);
+
+      setFormData((prev) => ({
+        ...prev,
+        sid_grado: "0",
+        sid_grupo: "0",
+      }));
+    }
+  }, [formData.sid_nivel]);
+
+  useEffect(() => {
+    if (formData.sid_grado !== "0") {
+      obtenerGruposPorGrados(formData.sid_grado, setGrupos);
+
+      setFormData((prev) => ({
+        ...prev,
+        sid_grupo: "0",
+      }));
+    }
+  }, [formData.sid_grado]);
 
   const columns = [
     { label: "Receptor", key: "receptor" },
-    { label: "Envio", key: "tipo_de_envio" },
-    { label: "Num Destinatario", key: "num_destinatarios" },
+    { label: "Envio", key: "nombre_tipo" },
+    { label: "Num Destinatario", key: "destinatarios" },
     { label: "Asunto", key: "asunto" },
-    { label: "Fecha", key: "fecha" },
-    { label: "programado", key: "programado" },
+    { label: "Fecha", key: "fecha_de_envio" },
   ];
 
-  const [mensajes, setMensajes] = useState(datamensajes);
-
-  useEffect(() => {
+  /*useEffect(() => {
     //  Inicializar solo si no está ya inicializada
     if (!$.fn.DataTable.isDataTable("#mensajesTable")) {
       $("#mensajesTable").DataTable();
@@ -89,7 +116,21 @@ export default function Mensaje() {
         $("#mensajesTable").DataTable().destroy();
       }
     };
-  }, []);
+  }, []);*/
+
+  useEffect(() => {
+    if (nivelSeleccionado) {
+      obtenerGradosPorNivel(nivelSeleccionado, setGrados);
+      setGrupos([]);
+      setGradoSeleccionado(null);
+    }
+  }, [nivelSeleccionado]);
+
+  useEffect(() => {
+    if (gradoSeleccionado) {
+      obtenerGruposPorGrados(gradoSeleccionado, setGrupos);
+    }
+  }, [gradoSeleccionado]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -145,41 +186,108 @@ export default function Mensaje() {
     // Aquí envías formData a tu API con Axios o fetch
   };
 
-   const filtrarDatos = (filtros) => {
-    let filtrado = datamensajes;
+  const renderReceptorFields = () => {
+    switch (formData.receptor) {
+      case "1": // Estudiantes
+        return (
+          <CustomSelect
+            label="Estudiante"
+            name="sid_estudiante"
+            value={formData.sid_estudiante}
+            onChange={handleChange}
+            options={alumnos}
+            optionValue="id_estudiante"
+            optionLabel="nombre"
+            placeholder="Selecciona estudiante"
+          />
+        );
 
-    if (filtros.buscar) {
-      const buscarLower = filtros.buscar.toLowerCase();
-      filtrado = filtrado.filter((d) =>
-        d.estudiante.toLowerCase().includes(buscarLower)
-      );
+      case "2": // Nivel → Grado → Grupo
+        return (
+          <div className="row mt-3">
+            <div className="col-lg-4">
+              <CustomSelect
+                label="Nivel"
+                name="sid_nivel"
+                value={formData.sid_nivel}
+                onChange={handleChange}
+                options={niveles}
+                optionValue="id_nivel"
+                optionLabel="nombre"
+                placeholder="Selecciona nivel"
+              />
+            </div>
+
+            <div className="col-lg-4">
+              <CustomSelect
+                label="Grado"
+                name="sid_grado"
+                value={formData.sid_grado}
+                onChange={handleChange}
+                options={grados}
+                optionValue="id_grado"
+                optionLabel="nombre"
+                placeholder="Selecciona grado"
+                disabled={formData.sid_nivel === "0"}
+              />
+            </div>
+
+            <div className="col-lg-4">
+              <CustomSelect
+                label="Grupo"
+                name="sid_grupo"
+                value={formData.sid_grupo}
+                onChange={handleChange}
+                options={grupos}
+                optionValue="id_grupo"
+                optionLabel="nombre"
+                placeholder="Selecciona grupo"
+                disabled={formData.sid_grado === "0"}
+              />
+            </div>
+          </div>
+        );
+
+      case "3": // Masivo
+        return (
+          <div className="mt-3">
+            <small className="text-muted">
+              Este mensaje será enviado a todos los usuarios.
+            </small>
+          </div>
+        );
+
+      case "4": // Específico
+        return (
+          <CustomSelect
+            label="Usuario específico"
+            name="sid_usuario"
+            value={formData.sid_usuario || "0"}
+            onChange={handleChange}
+            options={alumnos} // luego API
+            optionValue="id_usuario"
+            optionLabel="nombre"
+            placeholder="Selecciona usuario"
+          />
+        );
+
+      case "5": // Extracurricular
+        return (
+          <CustomSelect
+            label="Actividad extracurricular"
+            name="sid_extracurricular"
+            value={formData.sid_extracurricular}
+            onChange={handleChange}
+            options={extracurriculares} // luego API
+            optionValue="id"
+            optionLabel="nombre"
+            placeholder="Selecciona actividad"
+          />
+        );
+
+      default:
+        return null;
     }
-
-    if (filtros.nivel) {
-      filtrado = filtrado.filter((d) => d.nivel === filtros.nivel);
-    }
-
-    if (filtros.grado) {
-      filtrado = filtrado.filter((d) => d.grado === filtros.grado);
-    }
-
-    if (filtros.grupo) {
-      filtrado = filtrado.filter((d) => d.grupo === filtros.grupo);
-    }
-
-    if (filtros.desde) {
-      filtrado = filtrado.filter(
-        (d) => new Date(d.fecha_y_hora) >= new Date(filtros.desde)
-      );
-    }
-
-    if (filtros.hasta) {
-      filtrado = filtrado.filter(
-        (d) => new Date(d.fecha_y_hora) <= new Date(filtros.hasta)
-      );
-    }
-
-    setMensajes(filtrado);
   };
 
   return (
@@ -229,47 +337,20 @@ export default function Mensaje() {
                           className="form-control"
                         >
                           <option value="0">Selecciona una opción</option>
+
+                          {mensajesTipo.map((tipo) => (
+                            <option
+                              key={tipo.id_tipo_mensaje}
+                              value={tipo.id_tipo_mensaje}
+                            >
+                              {tipo.nombre}
+                            </option>
+                          ))}
                         </select>
                       </div>
 
-                      {/* Nivel - Grado - Grupo */}
-                      {formData.receptor === "2" && (
-                        <div className="row mt-3">
-                          <div className="col-lg-4">
-                            <label>Nivel</label>
-                            <select
-                              name="sid_nivel"
-                              value={formData.sid_nivel}
-                              onChange={handleChange}
-                              className="form-control"
-                            >
-                              <option value="0">Selecciona una opción</option>
-                            </select>
-                          </div>
-                          <div className="col-lg-4">
-                            <label>Grado</label>
-                            <select
-                              name="sid_grado"
-                              value={formData.sid_grado}
-                              onChange={handleChange}
-                              className="form-control"
-                            >
-                              <option value="0">Selecciona una opción</option>
-                            </select>
-                          </div>
-                          <div className="col-lg-4">
-                            <label>Grupo</label>
-                            <select
-                              name="sid_grupo"
-                              value={formData.sid_grupo}
-                              onChange={handleChange}
-                              className="form-control"
-                            >
-                              <option value="0">Selecciona una opción</option>
-                            </select>
-                          </div>
-                        </div>
-                      )}
+                      {/* Campos ocultos para mensaje */}
+                      {renderReceptorFields()}
 
                       {/* Asunto */}
                       <div className="mt-3">
@@ -298,7 +379,7 @@ export default function Mensaje() {
                               writer.setStyle(
                                 "min-height",
                                 "150px",
-                                editor.editing.view.document.getRoot()
+                                editor.editing.view.document.getRoot(),
                               );
                             });
                           }}
@@ -367,6 +448,54 @@ export default function Mensaje() {
                           className="form-control"
                           disabled={!formData.programado_mensaje}
                         />
+                      </div>
+
+                      <div className="row mt-3">
+                        {/* Repetir */}
+                        <div className="col-lg-4 d-flex align-items-center">
+                          <div className="form-check mt-3">
+                            <input
+                              type="checkbox"
+                              name="repetir_mensaje"
+                              checked={formData.repetir_mensaje}
+                              onChange={handleChange}
+                              className="form-check-input"
+                              id="repetirMensaje"
+                            />
+                            <label
+                              htmlFor="repetirMensaje"
+                              className="form-check-label"
+                            >
+                              Repetir
+                            </label>
+                          </div>
+                        </div>
+
+                        {/* Desde */}
+                        <div className="col-lg-4">
+                          <label>Desde</label>
+                          <input
+                            type="date"
+                            name="periodo_mensaje"
+                            value={formData.periodo_mensaje || ""}
+                            onChange={handleChange}
+                            className="form-control"
+                            disabled={!formData.repetir_mensaje}
+                          />
+                        </div>
+
+                        {/* Hasta */}
+                        <div className="col-lg-4">
+                          <label>Hasta</label>
+                          <input
+                            type="date"
+                            name="fecha_fin_mensaje"
+                            value={formData.fecha_fin_mensaje || ""}
+                            onChange={handleChange}
+                            className="form-control"
+                            disabled={!formData.repetir_mensaje}
+                          />
+                        </div>
                       </div>
 
                       {/* Archivos dinámicos */}
@@ -480,13 +609,10 @@ export default function Mensaje() {
             </div>
 
             <Filter
-              //onFilterChange={filtrarDatos}
               enabledFilters={["buscar", "rango"]}
               nombreFiltro="Mensajes"
-              onFilterChange={filtrarDatos}
-
+              onFilterChange={manejarMensajesFiltros}
             />
-
             {/* Tabla mensajes */}
             <Table
               id="mensajesTable"

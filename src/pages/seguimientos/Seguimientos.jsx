@@ -14,8 +14,8 @@ export default function Seguimientos() {
 
   const columnsSeguimientos = [
     { label: "Alumno", key: "nombreAlumno" },
-    { label: "Enviado", key: "fecha_registro" },
-    { label: "Visto", key: "fecha_visto" },
+    { label: "Enviado", key: "enviado" },
+    { label: "Visto", key: "visto" },
   ];
 
   return (

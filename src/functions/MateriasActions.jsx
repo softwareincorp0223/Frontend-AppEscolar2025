@@ -20,6 +20,23 @@ export const obtenerMaterias = async (setMaterias) => {
   }
 };
 
+export const obtenerMateriasAsignadas = async (setMateriasAsignadas) => {
+  try {
+    const materiasAsignadasApi = await InstitutoData("vista-asignar-materias?&sid_instituto=");
+    console.log(materiasAsignadasApi);
+    
+    const formateados = materiasAsignadasApi.map((u) => ({
+      ...u,
+      nivelGradoGrupo: `${u.nombre_nivel} - ${u.nombre_grado} - ${u.nombre_grupo}`,
+      profesor: `${u.nombre_profesor} ${u.apellido_profesor}`,
+      creacion: u.fecha_creacion ? fechaFormateada(u.fecha_creacion, { paraUI: true }) : "Sin fecha",
+    }));
+
+    setMateriasAsignadas(formateados);
+  } catch (error) {
+    showAlert("error", "Error al obtener materias asignadas");
+  }
+};
 
 export const handleDelete = async (row, obtenerMaterias) => {
 
@@ -29,6 +46,17 @@ export const handleDelete = async (row, obtenerMaterias) => {
   await InstitutoDataDelete(`materia/${row.id_materia}`);
   await obtenerMaterias(); // refrescar tabla
   showAlert("success", "Materia eliminada correctamente");
+};
+
+export const handleDeleteAsignacion = async (row, obtenerMateriasAsignadas) => {
+
+  console.log("row##############################");
+  console.log(row);
+  const result = await showAlert("delete", "¿Deseas eliminar esta Asignación de Materia?");
+  if (!result.isConfirmed) return;
+  await InstitutoDataDelete(`asignar_materia/${row.id_asignar_materia}`);
+  await obtenerMateriasAsignadas(); // refrescar tabla
+  showAlert("success", "Asignación de materia eliminada correctamente");
 };
 
 export const handleSave = async (values, editingMateria, setEditingMateria, obtenerMaterias) => {
@@ -54,4 +82,31 @@ export const handleSave = async (values, editingMateria, setEditingMateria, obte
   }
 
   await obtenerMaterias();
+};
+
+export const handleSaveAsignacion = async (values, editingAsignarMaterias, setEditingAsignarMaterias, obtenerMateriasAsignadas) => {
+  const sid_instituto = localStorage.getItem("sid_instituto");
+  const fecha = fechaFormateada();
+
+  const payload = {
+    id_asignar_materia: editingAsignarMaterias ? editingAsignarMaterias.id_asignar_materia : null,
+    sid_materia: values.materia,
+    sid_profesor: values.profesor,
+    sid_nivel: values.Nivel,
+    sid_grado: values.Grado,
+    sid_grupo: values.Grupo,
+    sid_usuario: sid_instituto,
+    fecha_creacion: Date.now(),
+  };
+
+  if (editingAsignarMaterias) {
+    await InstitutoDataUpdate(`asignar_materia/${editingAsignarMaterias.id_materia}`, payload);
+    showAlert("success", "Materia actualizada correctamente");
+    setEditingAsignarMaterias(null);
+  } else {
+    await InstitutoDataAdd("asignar_materia", payload);
+    showAlert("success", "Materia agregada correctamente");
+  }
+
+  await obtenerMateriasAsignadas();
 };

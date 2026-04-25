@@ -65,7 +65,7 @@ export default function Filter({
     const obtenerGrados = async () => {
       try {
         const gradosApi = await InstitutoDataFilter(
-          `grado?sid_nivel=${filtros.nivel}`
+          `grado?sid_nivel=${filtros.nivel}`,
         );
         setGrados(gradosApi);
       } catch (error) {
@@ -84,7 +84,7 @@ export default function Filter({
     const obtenerGrupos = async () => {
       try {
         const gruposApi = await InstitutoDataFilter(
-          `grupo?sid_grado=${filtros.grado}`
+          `grupo?sid_grado=${filtros.grado}`,
         );
         setGrupos(gruposApi);
       } catch (error) {
@@ -95,7 +95,14 @@ export default function Filter({
   }, [filtros.grado]);
 
   // 🔸 Cada cambio de filtro notifica al padre
+  const firstRender = useRef(true);
+
   useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+
     onFilterChange(filtros);
   }, [filtros]);
 
@@ -257,9 +264,7 @@ export default function Filter({
           >
             <option value="">Grupo...</option>
             {grupos.map((g) => (
-              <option value={g.nombre}>
-                {g.nombre}
-              </option>
+              <option value={g.nombre}>{g.nombre}</option>
             ))}
           </select>
         </div>
