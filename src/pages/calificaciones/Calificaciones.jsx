@@ -4,23 +4,23 @@ import Table from "../../components/Table";
 import Form from "../../components/Form";
 import ActionButtons from "../../components/ActionButtons";
 import TableButtons from "../../components/TableButtons";
-import { obtenerCiclos, handleDelete, handleSave } from "../../functions/CiclosActions";
+import { obtenerEvaluacion, handleDelete } from "../../functions/EvaluacionActions";
 
-export default function Ciclos() {
-  const [ciclos, setCiclos] = useState([]);
+export default function Calificaciones() {
+  const [evaluacion, setEvaluacion] = useState([]);
   const [editingCiclo, setEditingCiclo] = useState(null);
 
   useEffect(() => {
-    obtenerCiclos(setCiclos);
+    obtenerEvaluacion(setEvaluacion);
   }, []);
 
 
-  const columnsCiclos = [
-    { label: "Alumno", key: "nombre" },
-    { label: "Ciclo", key: "nombre" },
-    { label: "Nivel", key: "nombre" },
-    { label: "Grado", key: "nombre" },
-    { label: "Grupo", key: "nombre" },
+  const columnsEvaluacion = [
+    { label: "Alumno", key: "alumno" },
+    { label: "Ciclo", key: "ciclo" },
+    { label: "Nivel", key: "nivel" },
+    { label: "Grado", key: "grado" },
+    { label: "Grupo", key: "grupo" },
   ];
 
   return (
@@ -28,14 +28,13 @@ export default function Ciclos() {
       <Table
         id="calificacionesTable"
         title="Calificaciones"
-        columns={columnsCiclos}
-        data={ciclos}
+        columns={columnsEvaluacion}
+        data={evaluacion}
         showCheckbox={true}
         renderActions={(row) => (
           <ActionButtons
             row={row}
-            onDelete={() => handleDelete(row, () => obtenerCiclos(setCiclos))}
-            onEdit={() => setEditingCiclo(row)}
+            onDelete={() => handleDelete(row, () => obtenerEvaluacion(setEvaluacion))}
             actions={["pdf", "delete"]}
           />
         )}

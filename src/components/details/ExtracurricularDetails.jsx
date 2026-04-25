@@ -5,7 +5,7 @@ import ActionButtons from "../../components/ActionButtons";
 import { obtenerAlumnos } from "../../functions/EstudiantesActions";
 import { handleSaveExtracurricularAlumno, obtenerAlumnosExtracurricular, handleDeleteAlumnoExtracurricular } from "../../functions/ExtracurricularActions";
 import ExtracurricularTable from "../tables/ExtracurricularTable";
-
+import { showAlert } from "../../functions/general/Alerts";
 
 
 export default function ExtracurricularDetails({ alumno, onClose }) {
@@ -80,7 +80,7 @@ export default function ExtracurricularDetails({ alumno, onClose }) {
     e.preventDefault();
 
     if (!sidAlumno) {
-      alert("Debes seleccionar un alumno");
+      showAlert("info", "Debes seleccionar un alumno");
       return;
     }
 
@@ -126,7 +126,6 @@ export default function ExtracurricularDetails({ alumno, onClose }) {
 
               {/* formulario */}
               <div className="gap-2">
-                <h2></h2>
                 <h2 className="card-title fs-5 mb-4">Agregar Alumno</h2>
                 <form onSubmit={handleSubmit}>
 

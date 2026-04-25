@@ -30,11 +30,6 @@ export const handleSave = async (values, editingAtributo, setEditingAtributo, ob
   const user = JSON.parse(localStorage.getItem("user"));
   const sid_usuario = user.id;
 
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    console.log(key, ":", localStorage.getItem(key));
-  }
-
   const payload = {
     id_atributo: editingAtributo ? editingAtributo.id_atributo : null,
     icono: values.icono,

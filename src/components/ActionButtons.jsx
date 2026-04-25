@@ -113,6 +113,7 @@ export default function ActionButtons({
             key={idx}
             className={`btn btn-sm ${btn.className} me-2`}
             onClick={() => btn.onClick(row.id ?? row)}
+            title={btn.label}
           >
             {btn.icon && (
               <span

@@ -26,7 +26,7 @@ export default function Estadisticas() {
 
   return (
     <Layout>
-      <div className="container py-3">
+      <div className="container-fluid">
 
         <div className="row g-3 mb-4">
 
