@@ -13,6 +13,7 @@ export const obtenerSeguimientos = async (setSeguimientos) => {
 
     const where = encodeURIComponent(
       JSON.stringify({
+        eliminado: 0,
         Alumno: { sid_instituto }
       })
     );
@@ -76,4 +77,16 @@ export const obtenerSeguimientosEliminados = async (setSeguimientos) => {
   } catch (error) {
     showAlert("error", "Error al obtener alumnos");
   }
+};
+
+export const handleDeleteVarios = async (ids, setSeguimientos) => {
+  if (ids.length == 0) {
+    showAlert("error", "Selecciona los seguimientos que deseas eliminar.");
+    return;
+  }
+  const result = await showAlert("delete", "¿Deseas eliminar varios Seguimientos?");
+  if (!result.isConfirmed) return;
+  await InstitutoDataDelete(ids, "padre", "id_padre");
+  await obtenerSeguimientos(setSeguimientos); // refrescar tabla
+  showAlert("success", "Seguimientos eliminados correctamente");
 };

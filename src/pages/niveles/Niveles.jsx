@@ -134,8 +134,8 @@ export default function Niveles() {
 
   return (
     <Layout>
-      <div className="container-fluid py-4 py-lg-4">
-        <div className="row g-4 g-lg-4">
+      <div className="container-fluid">
+        <div className="row">
           {/* NIVELES */}
           <div className="col-lg-6">
             <Form

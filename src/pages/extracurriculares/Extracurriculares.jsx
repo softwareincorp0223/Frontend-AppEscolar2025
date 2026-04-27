@@ -24,7 +24,7 @@ export default function Extracurriculares() {
     const encabezados = ["Nombre", "Apellido", "Matricula", "Nivel", "Grado", "Grupo", "Extracurricular"];
     exportarExcel("ExtracurricularInstituto", encabezados, extracurricularesExcel);
   };
-  console.log(extracurricularesExcel);
+  
   const tableHandlers = {
     excel: botonExcel,
   };

@@ -47,9 +47,19 @@ export default function Table({
   useEffect(() => {
     const $table = $(tableRef.current);
 
+    // const columnsDef = columns.map((col) => ({
+    //   title: col.label,
+    //   data: col.key,
+    // }));
+
     const columnsDef = columns.map((col) => ({
       title: col.label,
       data: col.key,
+      render: col.render
+        ? function (data, type, row) {
+          return col.render(row);
+        }
+        : undefined,
     }));
 
     if (showCheckbox) {
@@ -103,7 +113,7 @@ export default function Table({
           if (rootsRef.current.has(key)) {
             try {
               rootsRef.current.get(key).unmount();
-            } catch {}
+            } catch { }
             rootsRef.current.delete(key);
           }
 
@@ -125,7 +135,7 @@ export default function Table({
       rootsRef.current.forEach((root) => {
         try {
           root.unmount();
-        } catch {}
+        } catch { }
       });
       rootsRef.current.clear();
 
@@ -149,7 +159,7 @@ export default function Table({
     rootsRef.current.forEach((root) => {
       try {
         root.unmount();
-      } catch {}
+      } catch { }
     });
     rootsRef.current.clear();
 

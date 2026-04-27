@@ -378,6 +378,26 @@ body {
   opacity:1;
 }
 
+.badge-primary-custom {
+  background-color: var(--light-gray);
+  color: var(--dark-gray);
+}
+
+/* .action-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+
+.action-btn:hover {
+  transform: scale(1.05);
+  transition: 0.2s ease;
+} */
+
 /* 🔹 Móviles: ocupar todo el ancho y ocultar sidebar */
 @media (max-width: 991px) {
 

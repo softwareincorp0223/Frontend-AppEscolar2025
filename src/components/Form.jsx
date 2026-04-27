@@ -175,6 +175,30 @@ export default function Form({
                     />
                   </div>
 
+                ) : field.type === "image-select" ? (
+                  <div className="d-flex flex-wrap gap-2">
+                    {field.options.map((opt) => (
+                      <div
+                        key={opt.value}
+                        onClick={() =>
+                          handleChange({
+                            target: { name: field.name, value: opt.value },
+                          })
+                        }
+                        style={{
+                          border:
+                            formValues[field.name] === opt.value
+                              ? "2px solid #007bff"
+                              : "1px solid #ccc",
+                          borderRadius: "8px",
+                          padding: "5px",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <img src={opt.image} width={40} />
+                      </div>
+                    ))}
+                  </div>
                 ) : (
                   <input
                     className={`form-control ${errors[field.name] ? "is-invalid" : ""

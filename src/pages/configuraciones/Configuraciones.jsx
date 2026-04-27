@@ -80,12 +80,15 @@ export default function Configuraciones() {
                 <h6><strong>Fecha de inicio de licencia:</strong> {instituto?.fecha_inicio_licencia || "Sin fecha"}</h6>
                 <h6><strong>Datos bancarios:</strong> {instituto?.banco || "Dato no disponible"}</h6>
 
-                <button
-                  className="btn btn-success btn-sm px-4 py-1"
-                  onClick={() => setEditingInstituto(true)}
-                >
-                  Editar configuración
-                </button>
+                <div className="text-end mt-3">
+                  <button
+                    className="btn btn-success btn-sm px-4 py-2 mt-3 align-text-bottom"
+                    onClick={() => setEditingInstituto(true)}
+                  >
+                    Editar configuración
+                  </button>
+                </div>
+
               </div>
             )}
 

@@ -1,21 +1,32 @@
 import React, { useMemo, useState } from "react";
 import ActionButtons from "../../components/ActionButtons";
 
-
-export default function ExtracurricularTable({ data = [], onDelete }) {
-
-
+export default function SeguimientosTable({ data = [], onDelete }) {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
 
+  const flattenValues = (obj) => {
+    let values = [];
+
+    Object.values(obj).forEach((val) => {
+      if (val && typeof val === "object") {
+        values = values.concat(flattenValues(val)); // recursivo
+      } else {
+        values.push(val);
+      }
+    });
+
+    return values;
+  };
 
   const filteredData = useMemo(() => {
     if (!search) return data;
 
     const s = search.toLowerCase();
+
     return data.filter((item) =>
-      Object.values(item).some((val) =>
+      flattenValues(item).some((val) =>
         String(val).toLowerCase().includes(s)
       )
     );
@@ -68,7 +79,8 @@ export default function ExtracurricularTable({ data = [], onDelete }) {
         <table className="table table-hover align-middle">
           <thead className="table-light">
             <tr>
-              <th>Alumno</th>
+              <th>Evaluación</th>
+              <th>Atributo</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -82,7 +94,8 @@ export default function ExtracurricularTable({ data = [], onDelete }) {
             ) : (
               currentData.map((row, idx) => (
                 <tr key={idx}>
-                  <td>{row.nombre_alumno}</td>
+                  <td>{row.Atributo.nombre}</td>
+                  <td>{row.valor_atributo}</td>
                   <td>
                     <ActionButtons
                       row={row}
