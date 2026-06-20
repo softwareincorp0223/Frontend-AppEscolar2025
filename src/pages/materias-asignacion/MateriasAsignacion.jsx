@@ -13,6 +13,7 @@ import {
   handleDelete,
   handleDeleteAsignacion,
   handleSaveAsignacion,
+  obtenerDetalleAsignacion,
 } from "../../functions/MateriasActions";
 import { obtenerMaterias } from "../../functions/MateriasActions";
 import { obtenerUsuarios } from "../../functions/UsuariosActions";
@@ -52,6 +53,31 @@ export default function MateriasAsignacion() {
     }
   }, [gradoSeleccionado]);
 
+  useEffect(() => {
+    if (editingAsignaMaterias && !editingAsignaMaterias.cargado) {
+      obtenerDetalleAsignacion(
+        editingAsignaMaterias.id_asignar_materia,
+        (res) => setEditingAsignarMaterias({ ...res, cargado: true }),
+      );
+    }
+  }, [editingAsignaMaterias]);
+
+  useEffect(() => {
+    if (!editingAsignaMaterias) return;
+
+    const nivel = editingAsignaMaterias.sid_nivel;
+    const grado = editingAsignaMaterias.sid_grado;
+
+    setNivelSeleccionado(nivel);
+
+    obtenerGradosPorNivel(nivel, (resGrados) => {
+      setGrados(resGrados);
+
+      setGradoSeleccionado(grado);
+
+      obtenerGruposPorGrados(grado, setGrupos);
+    });
+  }, [editingAsignaMaterias]);
   const formAsignarMateria = [
     {
       name: "profesor",
@@ -121,6 +147,7 @@ export default function MateriasAsignacion() {
   return (
     <Layout>
       <Form
+        key={editingAsignaMaterias?.id_asignar_materia || "new"}
         title={
           editingAsignaMaterias ? "Editar Asignar Materia" : "Asignar Materia"
         }
@@ -132,17 +159,17 @@ export default function MateriasAsignacion() {
             editingAsignaMaterias,
             setEditingAsignarMaterias,
             () => obtenerMateriasAsignadas(setMateriasAsignadas),
-                resetFormulario(),
-
+            () => resetFormulario(),
           )
         }
         initialValues={
           editingAsignaMaterias
             ? {
+                id_asignar_materia: editingAsignaMaterias.id_asignar_materia,
                 profesor: editingAsignaMaterias.sid_usuario,
                 materia: editingAsignaMaterias.sid_materia,
-                Nivel: editingAsignaMaterias.sid_nivel,
-                Grado: editingAsignaMaterias.sid_grado,
+                Nivel: nivelSeleccionado || editingAsignaMaterias.sid_nivel,
+                Grado: gradoSeleccionado || editingAsignaMaterias.sid_grado,
                 Grupo: editingAsignaMaterias.sid_grupo,
               }
             : {}
@@ -158,9 +185,8 @@ export default function MateriasAsignacion() {
           <ActionButtons
             row={row}
             onDelete={() =>
-              handleDelete(
-                row,
-                () => obtenerMateriasAsignadas(setMateriasAsignadas),
+              handleDeleteAsignacion(row, () =>
+                obtenerMateriasAsignadas(setMateriasAsignadas),
               )
             }
             onEdit={() => setEditingAsignarMaterias(row)}

@@ -101,7 +101,7 @@ export default function ActionButtons({
           btn = {
             label: action.label,
             icon: action.icon,
-            className: action.className || "btn-outline-secondary",
+            className: action.className || "btn-outline-secondary ",
             onClick: action.onClick || (() => {}),
           };
         }
@@ -111,7 +111,7 @@ export default function ActionButtons({
         return (
           <button
             key={idx}
-            className={`btn btn-sm ${btn.className} me-2`}
+            className={`btn btn-sm ${btn.className} me-2 p-2 d-inline-flex align-items-center`}
             onClick={() => btn.onClick(row.id ?? row)}
             title={btn.label}
           >
@@ -123,7 +123,9 @@ export default function ActionButtons({
                 {btn.icon}
               </span>
             )}
-            <span className="px-1">{btn.label}</span>
+
+            {/* Texto siempre visible, pero adaptable */}
+            <span className="ms-1 small small-lg">{btn.label}</span>
           </button>
         );
       })}

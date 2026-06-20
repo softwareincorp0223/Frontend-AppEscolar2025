@@ -5,6 +5,7 @@ import {
   InstitutoDataAdd,
   InstitutoDataDelete,
   InstitutoDataUpdate,
+  InstitutoDataFilter
 } from "./general/DataActions";
 
 export const obtenerMaterias = async (setMaterias) => {
@@ -23,7 +24,6 @@ export const obtenerMaterias = async (setMaterias) => {
 export const obtenerMateriasAsignadas = async (setMateriasAsignadas) => {
   try {
     const materiasAsignadasApi = await InstitutoData("vista-asignar-materias?&sid_instituto=");
-    console.log(materiasAsignadasApi);
     
     const formateados = materiasAsignadasApi.map((u) => ({
       ...u,
@@ -50,8 +50,6 @@ export const handleDelete = async (row, obtenerMaterias) => {
 
 export const handleDeleteAsignacion = async (row, obtenerMateriasAsignadas) => {
 
-  console.log("row##############################");
-  console.log(row);
   const result = await showAlert("delete", "¿Deseas eliminar esta Asignación de Materia?");
   if (!result.isConfirmed) return;
   await InstitutoDataDelete(`asignar_materia/${row.id_asignar_materia}`);
@@ -70,8 +68,6 @@ export const handleSave = async (values, editingMateria, setEditingMateria, obte
     sid_instituto
   };
 
-   console.log("Payload enviado:", payload);
-
   if (editingMateria) {
     await InstitutoDataUpdate(`materia/${editingMateria.id_materia}`, payload);
     showAlert("success", "Materia actualizada correctamente");
@@ -87,6 +83,7 @@ export const handleSave = async (values, editingMateria, setEditingMateria, obte
 export const handleSaveAsignacion = async (values, editingAsignarMaterias, setEditingAsignarMaterias, obtenerMateriasAsignadas) => {
   const sid_instituto = localStorage.getItem("sid_instituto");
   const fecha = fechaFormateada();
+  console.log("Valores del formulario:", values);
 
   const payload = {
     id_asignar_materia: editingAsignarMaterias ? editingAsignarMaterias.id_asignar_materia : null,
@@ -100,7 +97,7 @@ export const handleSaveAsignacion = async (values, editingAsignarMaterias, setEd
   };
 
   if (editingAsignarMaterias) {
-    await InstitutoDataUpdate(`asignar_materia/${editingAsignarMaterias.id_materia}`, payload);
+    await InstitutoDataUpdate(`asignar_materia/${editingAsignarMaterias.id_asignar_materia}`, payload);
     showAlert("success", "Materia actualizada correctamente");
     setEditingAsignarMaterias(null);
   } else {
@@ -110,3 +107,20 @@ export const handleSaveAsignacion = async (values, editingAsignarMaterias, setEd
 
   await obtenerMateriasAsignadas();
 };
+
+export const obtenerDetalleAsignacion = async (id, setEditingAsignarMaterias) => {
+    try {
+  console.log("Materias editingAsignaMaterias:", id);
+
+      const res = await InstitutoDataFilter(`asignar_materia/${id}`);
+
+      setEditingAsignarMaterias(res);
+
+      console.log("Detalle:", res);
+
+      // aquí puedes guardar en estado si quieres
+      // setDetalle(data);
+    } catch (error) {
+      console.error(error);
+    }
+  };

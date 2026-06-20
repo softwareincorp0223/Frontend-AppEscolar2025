@@ -108,7 +108,7 @@ export const convertirLogoABase64 = async (ruta) => {
   });
 };
 
-function getField(obj, fields = []) {
+export function getField(obj, fields = []) {
   for (const field of fields) {
     const value = field.split(".").reduce((acc, key) => acc?.[key], obj);
 
@@ -119,7 +119,7 @@ function getField(obj, fields = []) {
   return null;
 }
 
-function normalizarFecha(valor) {
+export function normalizarFecha(valor) {
   if (!valor) return null;
 
   // Si ya es Date

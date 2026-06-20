@@ -8,6 +8,7 @@ import {
   obtenerAlumnos,
   handleSaveAlumnos,
   handleDeleteVarios,
+  handleDelete,
 } from "../../functions/EstudiantesActions";
 import { filtrarTabla } from "../../functions/general/Functions";
 import EstudianteDetails from "../../components/details/EstudiantesDetails";
@@ -55,12 +56,27 @@ export default function Estudiantes() {
       setGradoSeleccionado(null);
     }
   }, [nivelSeleccionado]);
+  console.log(editing);
 
   useEffect(() => {
     if (gradoSeleccionado) {
       obtenerGruposPorGrados(gradoSeleccionado, setGrupos);
     }
   }, [gradoSeleccionado]);
+
+  useEffect(() => {
+    if (editing) {
+      setNivelSeleccionado(editing.sid_nivel);
+      setGradoSeleccionado(editing.sid_grado);
+
+      // Cargar grados y grupos automáticamente
+      obtenerGradosPorNivel(editing.sid_nivel, (resGrados) => {
+        setGrados(resGrados);
+
+        obtenerGruposPorGrados(editing.sid_grado, setGrupos);
+      });
+    }
+  }, [editing]);
 
   /* =========================
      FILTROS
@@ -169,8 +185,8 @@ export default function Estudiantes() {
         label: "Padre",
         type: "select",
         options: padres.map((r) => ({
-          value: r.id_padre,
-          label: r.nombre + ' ' + r.apellido,
+          value: String(r.id_padre),
+          label: r.nombre + " " + r.apellido,
         })),
         required: true,
       },
@@ -180,8 +196,16 @@ export default function Estudiantes() {
         type: "text",
       },
     ],
-    [niveles, grados, grupos]
+    [niveles, grados, grupos],
   );
+
+  const resetFormulario = () => {
+    setEditing(null); // 🔥 salir de modo edición
+    setNivelSeleccionado(null); // limpiar selects dependientes
+    setGradoSeleccionado(null);
+    setGrados([]);
+    setGrupos([]);
+  };
 
   /* =========================
      INITIAL VALUES ESTABLES
@@ -192,14 +216,29 @@ export default function Estudiantes() {
     <Layout>
       <div className="container-fluid pb-4">
         <Form
+          key={editing ? editing.id : "new"}
           title={editing ? "Editar Estudiante" : "Agregar Estudiante"}
           fields={formFields}
           columns={3}
-          initialValues={initialFormValues}
           onSubmit={(values) =>
-            handleSaveAlumnos(values, editing, setEditing, () =>
-              obtenerAlumnos(setAlumnos)
-            )
+            handleSaveAlumnos(values, editing, setEditing, () => {
+              obtenerAlumnos(setAlumnos);
+              resetFormulario();
+            })
+          }
+          initialValues={
+            editing
+              ? {
+                  nombre: editing.nombre,
+                  apellido: editing.apellido,
+                  matricula: editing.matricula,
+                  Sexo: editing.sexo,
+                  Nivel: nivelSeleccionado || editing.sid_nivel,
+                  Grado: gradoSeleccionado || editing.sid_grado,
+                  Grupo: editing.sid_grupo,
+                  Padre: String(editing.sid_padre),
+                }
+              : {}
           }
         />
 
@@ -225,6 +264,8 @@ export default function Estudiantes() {
               <ActionButtons
                 row={row}
                 setSelectedUser={setSelectedEstudiante}
+                onEdit={() => setEditing(row)}
+                onDelete={() => handleDelete(row, setAlumnos)}
                 actions={["view", "edit", "delete"]}
               />
             )}

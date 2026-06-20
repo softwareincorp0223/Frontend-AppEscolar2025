@@ -11,6 +11,9 @@ export default function PadreDetails({ padre, onClose }) {
 
   useEffect(() => {
     obtenerAlumnosPadres(padre.id_padre, setHijos);
+    console.log("padre");
+    console.log(padre);
+    
   }, []);
 
   return (

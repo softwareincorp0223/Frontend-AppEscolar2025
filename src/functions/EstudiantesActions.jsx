@@ -7,6 +7,7 @@ import {
   InstitutoDataUpdate,
 } from "./general/DataActions";
 import { generarCodigoQR } from "./general/Functions";
+import { phpRequest } from "./general/PhpDataActions";
 
 export const obtenerAlumnos = async (setAlumnos) => {
   try {
@@ -50,7 +51,10 @@ export const handleSaveAlumnos = async (values, editing, setEditing, obtenerAlum
     showAlert("success", "Alumno actualizado correctamente");
     setEditing(null);
   } else {
-    await InstitutoDataAdd("alumno", payload);
+    const res = await InstitutoDataAdd("alumno", payload);
+    await phpRequest("alumno.php", "modificar", {
+      id_alumno: res.id_alumno,
+    });
     showAlert("success", "Alumno agregado correctamente");
   }
 
@@ -60,12 +64,14 @@ export const handleSaveAlumnos = async (values, editing, setEditing, obtenerAlum
 export const obtenerAlumnosPadres = async (id_padre, setAlumnos) => {
   try {
     const alumnosPadreApi = await InstitutoDataFilter("alumno?include=Nivel,Grado,Grupo&sid_padre=" + id_padre);
+    const padreQR = await phpRequest("padre.php", "consultar", { id_padre: id_padre });
     
     const formateados = alumnosPadreApi.map((data) => ({
       ...data,
       nivel: data.Nivel?.nombre || "Sin Nivel",
       grado: data.Grado?.nombre || "Sin Grado",
       grupo: data.Grupo?.nombre || "Sin Grado",
+      padreQR: padreQR?.codigo_qr || "Sin QR",
     }));
     setAlumnos(formateados);
 
@@ -84,6 +90,16 @@ export const handleDeleteVarios = async (ids, setEstudiantes) => {
   const result = await showAlert("delete", "¿Deseas eliminar varios estudiantes?");
   if (!result.isConfirmed) return;
   await InstitutoDataDelete(ids, "alumno", "id_alumno");
+  await obtenerAlumnos(setEstudiantes); // refrescar tabla
+  showAlert("success", "Estudiante eliminado correctamente");
+};
+
+export const handleDelete = async (row, setEstudiantes) => {
+  const result = await showAlert("delete", "¿Deseas eliminar este estudiante?");
+
+  console.log(row)
+  if (!result.isConfirmed) return;
+  await InstitutoDataDelete(`alumno/${row.id_alumno}`);
   await obtenerAlumnos(setEstudiantes); // refrescar tabla
   showAlert("success", "Estudiante eliminado correctamente");
 };

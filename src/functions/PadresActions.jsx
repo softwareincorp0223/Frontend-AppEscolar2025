@@ -7,6 +7,7 @@ import {
   InstitutoDataUpdate,
 } from "./general/DataActions";
 import { generarCodigoQR } from "./general/Functions";
+import {phpRequest} from "./general/PhpDataActions";
 
 export const obtenerPadres = async (setPadres) => {
   try {
@@ -42,7 +43,7 @@ export const handleSave = async (
   values,
   editing,
   setEditing,
-  obtenerPadres
+  obtenerPadres,
 ) => {
   const sid_instituto = localStorage.getItem("sid_instituto");
   const fecha = fechaFormateada();
@@ -65,7 +66,10 @@ export const handleSave = async (
     showAlert("success", "Padre actualizado correctamente");
     setEditing(null);
   } else {
-    await InstitutoDataAdd("padre", payload);
+    const res = await InstitutoDataAdd("padre", payload);
+    await phpRequest("padre.php", "modificar", {
+      id_padre: res.id_padre,
+    });
     showAlert("success", "Padre agregado correctamente");
   }
 
