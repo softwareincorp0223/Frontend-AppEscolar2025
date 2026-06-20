@@ -3,7 +3,7 @@ import Layout from "../../components/Layout";
 import Table from "../../components/Table";
 import ActionButtons from "../../components/ActionButtons";
 import TableButtons from "../../components/TableButtons";
-import { obtenerSeguimientos, handleDelete } from "../../functions/SeguimientosActions";
+import { obtenerSeguimientos, handleDelete, handleDeleteVarios } from "../../functions/SeguimientosActions";
 import SeguimientoDetails from "../../components/details/SeguimientosDetails";
 import { exportarExcel } from "../../functions/general/exportarExcel";
 import { obtenerAsignarAtributosExcel } from "../../functions/AsignarAtributoActions";
@@ -13,7 +13,8 @@ export default function Seguimientos() {
   const [seguimientos, setSeguimientos] = useState([]);
   const [selectedExtra, setSelectedExtra] = useState(null);
   const [asignarAtributoExcel, setAsignarAtributoExcel] = useState({});
-
+  const [deleteCheck, setDeleteCheck] = useState([]);
+  
 
   useEffect(() => {
     obtenerSeguimientos(setSeguimientos);
@@ -26,15 +27,22 @@ export default function Seguimientos() {
     { label: "Visto", key: "fecha_visto" },
   ];
 
+  const deleteVarios = () => {
+    console.log("Eliminar varios:", deleteCheck);
+    handleDeleteVarios(deleteCheck, setSeguimientos);
+  };
+
   const botonExcel = () => {
     console.log("Exportando Excel...");
-    const encabezados = ["Nombre", "Apellido", "Matricula", "Nivel", "Grado", "Grupo",  "Atributo", "ValorAtributo" , "Observacion", "Leido", "FechaRegistro", "FechaEliminacion", "Eliminado"];
+    const encabezados = ["Nombre", "Apellido", "Matricula", "Nivel", "Grado", "Grupo", "Atributo", "ValorAtributo", "Observacion", "Leido", "FechaRegistro", "FechaEliminacion", "Eliminado"];
     exportarExcel("AsignarAtributo", encabezados, asignarAtributoExcel);
   };
   console.log(asignarAtributoExcel);
 
   const tableHandlers = {
     excel: botonExcel,
+    delete: deleteVarios,
+
   };
 
 
@@ -68,6 +76,7 @@ export default function Seguimientos() {
               onActions={tableHandlers}
             />
           )}
+          onSelectionChange={(ids) => setDeleteCheck(ids)}
         />
       )}
 

@@ -37,10 +37,20 @@ export const obtenerSeguimientos = async (setSeguimientos) => {
 
 export const handleDelete = async (row, obtenerSeguimientos) => {
 
-  console.log(obtenerSeguimientos);
+  const fecha = fechaFormateada(new Date().toISOString().split("T")[0]);
+
   const result = await showAlert("delete", "¿Deseas eliminar este Seguimiento?");
   if (!result.isConfirmed) return;
-  await InstitutoDataDelete(`seguimiento/${row.id_seguimiento}`);
+
+  const payload = {
+    eliminado: "1",
+    fecha_eliminacion: fecha,
+  };
+
+  await InstitutoDataUpdate(
+    `seguimiento/${row.id_seguimiento}`,
+    payload
+  );
   await obtenerSeguimientos(); // refrescar tabla
   showAlert("success", "Seguimiento eliminado correctamente");
 };
@@ -75,13 +85,30 @@ export const obtenerSeguimientosEliminados = async (setSeguimientos) => {
 };
 
 export const handleDeleteVarios = async (ids, setSeguimientos) => {
-  if (ids.length == 0) {
+  if (ids.length === 0) {
     showAlert("error", "Selecciona los seguimientos que deseas eliminar.");
     return;
   }
-  const result = await showAlert("delete", "¿Deseas eliminar varios Seguimientos?");
+
+  const result = await showAlert(
+    "delete",
+    `¿Deseas eliminar ${ids.length} seguimientos?`
+  );
+
   if (!result.isConfirmed) return;
-  await InstitutoDataDelete(ids, "padre", "id_padre");
-  await obtenerSeguimientos(setSeguimientos); // refrescar tabla
+
+  const fecha = fechaFormateada(
+    new Date().toISOString().split("T")[0]
+  );
+
+  await InstitutoDataUpdate("seguimiento", {
+    ids,
+    idField: "id_seguimiento",
+    eliminado: "1",
+    fecha_eliminacion: fecha,
+  });
+
+  await obtenerSeguimientos(setSeguimientos);
+
   showAlert("success", "Seguimientos eliminados correctamente");
 };

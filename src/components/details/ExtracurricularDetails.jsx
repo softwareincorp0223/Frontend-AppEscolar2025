@@ -96,91 +96,143 @@ export default function ExtracurricularDetails({ alumno, onClose }) {
 
 
   return (
-    <div className="card shadow-sm p-4 mt-2 mx-auto" style={{ maxWidth: "1100px" }}>
-      <div className="row mb-4">
-        <div className="col-md-12">
-          <div className="d-flex justify-content-between align-items-center mb-1">
-            <h6 className="mb-0">Editar un extracurricular</h6>
-            <button className="btn btn-sm text-danger fw-bold" onClick={onClose}>
-              <i className="material-icons me-1" style={{ fontSize: "1rem", position: "relative", top: "3px" }}>close</i> Cerrar
-            </button>
+    <div
+      className="card shadow-sm p-4 mt-2 mx-auto"
+      style={{ maxWidth: "1400px" }}
+    >
+      {/* Encabezado */}
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h5 className="mb-0 fw-bold">Detalles del extracurricular</h5>
+
+        <button
+          className="btn btn-sm text-danger fw-bold"
+          onClick={onClose}
+        >
+          <i
+            className="material-icons me-1"
+            style={{
+              fontSize: "1rem",
+              position: "relative",
+              top: "3px",
+            }}
+          >
+            close
+          </i>
+          Cerrar
+        </button>
+      </div>
+
+      <div className="row g-4">
+
+        {/* COLUMNA IZQUIERDA */}
+        <div className="col-12 col-lg-4">
+
+          {/* Datos generales */}
+          <div className="card shadow-sm border-0 mb-4">
+            <div className="card-body text-center">
+
+              <h5 className="fw-bold text-primary mb-3">
+                <i
+                  className="material-icons me-1"
+                  style={{ fontSize: "20px" }}
+                >
+                  sports_esports
+                </i>
+                {alumno.nombre}
+              </h5>
+
+              <div className="mb-2">
+                <span className="text-muted">
+                  Número de estudiantes
+                </span>
+              </div>
+
+              <span className="badge bg-primary-subtle text-primary fs-5 px-3 py-2">
+                {alumnosFormateados.length}
+              </span>
+            </div>
           </div>
-          <div className="mb-4">
-            <div className="justify-content-center align-items-center">
-              <div className="d-flex flex-column align-items-center gap-2 text-center">
-                <h5 className="mb-0 fw-bold text-primary">
-                  <i className="material-icons me-1" style={{ fontSize: "20px" }}>
-                    sports_esports
-                  </i>
-                  {alumno.nombre}
-                </h5>
 
-                <small className="text-muted">
-                  N° Estudiantes:{" "}
-                  <span className="badge bg-primary-subtle text-primary fs-5 px-3 py-2">
-                    {alumnosFormateados.length}
-                  </span>
-                </small>
+          {/* Formulario */}
+          <div className="card shadow-sm border-0">
+            <div className="card-body">
+
+              <h6 className="fw-bold mb-3">
+                Agregar Alumno
+              </h6>
+
+              <form onSubmit={handleSubmit}>
+                <div className="mb-3">
+                  <label className="form-label">
+                    Selecciona una opción{" "}
+                    <span className="text-danger">*</span>
+                  </label>
+
+                  <select
+                    className="form-select"
+                    value={sidAlumno}
+                    onChange={(e) =>
+                      setSidAlumno(e.target.value)
+                    }
+                  >
+                    <option value="">
+                      Seleccione...
+                    </option>
+
+                    {alumnosDisponibles.map((r) => (
+                      <option
+                        key={r.id_alumno}
+                        value={r.id_alumno}
+                      >
+                        {r.nombre} {r.apellido}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="d-grid">
+                  <button
+                    type="submit"
+                    className="btn btn-success"
+                  >
+                    Guardar
+                  </button>
+                </div>
+              </form>
+
+            </div>
+          </div>
+
+        </div>
+
+        {/* COLUMNA DERECHA */}
+        <div className="col-12 col-lg-8">
+
+          <div className="card shadow-sm border-0 h-100">
+            <div className="card-body">
+
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h6 className="fw-bold mb-0">
+                  Alumnos Agregados
+                </h6>
+
+                <span className="badge bg-secondary">
+                  {alumnosFormateados.length} registros
+                </span>
               </div>
-              <hr />
 
-              {/* formulario */}
-              <div className="gap-2">
-                <h2 className="card-title fs-5 mb-4">Agregar Alumno</h2>
-                <form onSubmit={handleSubmit}>
-
-                  <div className="mb-3">
-                    <label className="form-label">
-                      Selecciona una opción <span className="text-danger">*</span>
-                    </label>
-
-                    <select
-                      className="form-select"
-                      value={sidAlumno}
-                      onChange={(e) => setSidAlumno(e.target.value)}
-                    >
-                      <option value="">Seleccione...</option>
-
-                      {alumnosDisponibles.map((r) => (
-                        <option key={r.id_alumno} value={r.id_alumno}>
-                          {r.nombre} {r.apellido}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="text-end">
-                    <button type="submit" className="btn btn-success">
-                      Guardar
-                    </button>
-                  </div>
-
-                </form>
-                {/* <Form
-                  title={"Agregar Alumno"}
-                  fields={formFieldsExtracurricularAlumno}
-                  columns={1}
-                  onSubmit={(values) =>
-                    handleSaveExtracurricularAlumno(
-                      values,
-                      alumno,
-                      (id) => obtenerAlumnosExtracurricular(setAlumnosExtracurricular, id)
-                    )
-                  }
-                // initialValues={editingNivel ? { nombre: editingNivel.nombre } : {}}
-                /> */}
-
-              </div>
-              <div className="gap-2">
-                <h6 className="fw-bold mb-2">Alumnos Agregados</h6>
+              <div className="table-responsive">
                 <ExtracurricularTable
                   data={alumnosFormateados}
                   onDelete={handleDelete}
                 />
               </div>
+
             </div>
           </div>
+
         </div>
+
       </div>
     </div>
   );

@@ -24,6 +24,7 @@ export default function ActionButtons({
   setSelectedUser,
   onDelete,
   onEdit,
+  PdfData,
 }) {
   //Funciones por boton
 
@@ -40,10 +41,6 @@ export default function ActionButtons({
   //QR Datos
   const QRData = (row) => {
     console.log("QR:", row);
-  };
-
-  const PdfData = (row) => {
-    console.log("PDF:", row);
   };
 
   // Botones predefinidos
