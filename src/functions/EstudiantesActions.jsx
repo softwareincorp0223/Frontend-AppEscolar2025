@@ -24,10 +24,33 @@ export const obtenerAlumnos = async (setAlumnos) => {
   }
 };
 
-export const handleSaveAlumnos = async (values, editing, setEditing, obtenerAlumnos) => {
-
+export const handleSaveAlumnos = async (
+  values,
+  editing,
+  setEditing,
+  obtenerAlumnos
+) => {
   const sid_instituto = localStorage.getItem("sid_instituto");
 
+  let foto = editing?.foto || null;
+
+  // Subir imagen a Google Drive
+  if (values.imagen) {
+    const formData = new FormData();
+
+    formData.append("files", values.imagen);
+
+    const response = await InstitutoDataAdd(
+      "drive/upload",
+      formData
+    );
+
+    if (response.ok && response.files.length > 0) {
+      foto = response.files[0].url;
+    }
+  }
+
+  // Payload alumno
   const payload = {
     id_alumno: editing ? editing.id_alumno : null,
     nombre: values.nombre,
@@ -39,7 +62,7 @@ export const handleSaveAlumnos = async (values, editing, setEditing, obtenerAlum
     sid_grado: values.Grado,
     sid_grupo: values.Grupo,
     sid_padre: values.Padre,
-    foto: values.Foto,
+    foto,
     nombre_contacto: "Sin datos",
     telefono_contacto: "Sin datos",
     alergias: "Sin datos",
@@ -47,15 +70,31 @@ export const handleSaveAlumnos = async (values, editing, setEditing, obtenerAlum
   };
 
   if (editing) {
-    await InstitutoDataUpdate(`alumno/${editing.id_alumno}`, payload);
-    showAlert("success", "Alumno actualizado correctamente");
+    await InstitutoDataUpdate(
+      `alumno/${editing.id_alumno}`,
+      payload
+    );
+
+    showAlert(
+      "success",
+      "Alumno actualizado correctamente"
+    );
+
     setEditing(null);
   } else {
-    const res = await InstitutoDataAdd("alumno", payload);
+    const res = await InstitutoDataAdd(
+      "alumno",
+      payload
+    );
+
     await phpRequest("alumno.php", "modificar", {
       id_alumno: res.id_alumno,
     });
-    showAlert("success", "Alumno agregado correctamente");
+
+    showAlert(
+      "success",
+      "Alumno agregado correctamente"
+    );
   }
 
   await obtenerAlumnos();

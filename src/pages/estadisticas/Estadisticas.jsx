@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import React from "react";
 import Layout from "../../components/Layout";
 import { Carousel } from "bootstrap";
@@ -7,10 +7,31 @@ import imagenFondo2 from "../../assets/fondo2.png";
 import imagenFondo3 from "../../assets/fondo3.png";
 import { BarChart } from "@mui/x-charts/BarChart";
 import { Box } from "@mui/material";
-
+import { obtenerEstadisticas } from "../../functions/EstadisticasActions";
 
 
 export default function Estadisticas() {
+
+  const [estadisticas, setEstadisticas] = useState({
+    totalMensajesMes: 0,
+    mensajesPorDia: [],
+  });
+
+
+  useEffect(() => {
+    obtenerEstadisticas(setEstadisticas);
+
+    const carouselElement = document.querySelector("#carouselEventos");
+
+    if (carouselElement) {
+      new Carousel(carouselElement, {
+        interval: 4000,
+        ride: "carousel",
+        pause: false
+      });
+    }
+  }, []);
+
 
   useEffect(() => {
     const carouselElement = document.querySelector("#carouselEventos");
@@ -49,7 +70,9 @@ export default function Estadisticas() {
                 <p className="text-muted small mb-0">TOTAL MENSAJES</p>
 
                 <div className="d-flex align-items-center justify-content-between mt-2">
-                  <h2 className="fw-bold mb-0">1,245</h2>
+                  <h2 className="fw-bold mb-0">
+                    {estadisticas.totalMensajesMes}
+                  </h2>
 
                   <Box sx={{ width: { xs: 120, md: 160 } }}>
                     <BarChart
@@ -196,10 +219,13 @@ export default function Estadisticas() {
                 </p>
 
                 <div className="d-grid gap-2 mb-4">
-                  <button className="btn btn-primary rounded-3">
+                  <a
+                    href="/src/pages/mensajes/index.html"
+                    className="btn btn-primary rounded-3"
+                  >
                     <span className="material-icons me-2">add</span>
                     Nuevo mensaje
-                  </button>
+                  </a>
 
                   {/* <button className="btn btn-light border rounded-3">
                     Ver mensajes

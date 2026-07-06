@@ -21,6 +21,7 @@ import { obtenerAlumnos } from "../../functions/EstudiantesActions";
 import { obtenerExtracurricular } from "../../functions/ExtracurricularActions";
 import MensajeForm from "../../components/custom/mensajes/MensajesForm";
 import MensajeDetails from "../../components/details/MensajesDetails";
+import DetailsContainer from "../../functions/general/DetailsContainer";
 
 export default function Mensaje() {
   const [mensajes, setMensajes] = useState([]);
@@ -76,7 +77,6 @@ export default function Mensaje() {
     obtenerAlumnos(setAlumnos);
     obtenerExtracurricular(setExtracurriculares);
     console.log(selectedMensaje);
-    
   }, []);
 
   useEffect(() => {
@@ -166,26 +166,30 @@ export default function Mensaje() {
               onFilterChange={manejarMensajesFiltros}
             />
 
-            {selectedMensaje ? (
+            <Table
+              id="mensajesTable"
+              title="Mensajes"
+              columns={columns}
+              data={mensajes}
+              showCheckbox={true}
+              renderActions={(row) => (
+                <ActionButtons
+                  row={row}
+                  actions={["view", "delete"]}
+                  setSelectedUser={setSelectedMensaje}
+                />
+              )}
+              headerButtons={(row) => (
+                <TableButtons row={row} actions={["delete", "excel"]} />
+              )}
+            />
+
+            <DetailsContainer visible={!!selectedMensaje} top={650}>
               <MensajeDetails
                 mensaje={selectedMensaje}
                 onClose={() => setSelectedMensaje(null)}
               />
-            ) : (
-              <Table
-                id="mensajesTable"
-                title="Mensajes"
-                columns={columns}
-                data={mensajes}
-                showCheckbox={true}
-                renderActions={(row) => (
-                  <ActionButtons row={row} actions={["view"]} setSelectedUser={setSelectedMensaje}/>
-                )}
-                headerButtons={(row) => (
-                  <TableButtons row={row} actions={["delete", "excel"]} />
-                )}
-              />
-            )}
+            </DetailsContainer>
           </div>
         </div>
       </div>

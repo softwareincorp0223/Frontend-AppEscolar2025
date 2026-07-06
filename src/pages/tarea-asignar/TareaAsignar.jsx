@@ -1,8 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Layout from "../../components/Layout";
 import { CKEditor } from "@ckeditor/ckeditor5-react";
 import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
 import "material-icons/iconfont/material-icons.css";
+import { obtenerNiveles } from "../../functions/NivelesActions";
+import { obtenerGradosPorNivel } from "../../functions/GradosActions";
+import { obtenerGruposPorGrados } from "../../functions/GruposActions";
+import { obtenerMateriasGrupo } from "../../functions/MateriasActions";
+import { handleSaveTarea } from "../../functions/TeareasActions";
 
 export default function TareaAsignar() {
   const [formData, setFormData] = useState({
@@ -14,6 +19,48 @@ export default function TareaAsignar() {
     archivos: [null], // empieza con un campo
     urls: [""],
   });
+  const [niveles, setNiveles] = useState([]);
+  const [grados, setGrados] = useState([]);
+  const [grupos, setGrupos] = useState([]);
+
+  const [nivelSeleccionado, setNivelSeleccionado] = useState(null);
+  const [gradoSeleccionado, setGradoSeleccionado] = useState(null);
+  const [materias, setMaterias] = useState([]);
+  const [grupoSeleccionado, setGrupoSeleccionado] = useState(null);
+
+  /*nivel grado grupo */
+  useEffect(() => {
+    obtenerNiveles(setNiveles);
+  }, []);
+
+  useEffect(() => {
+    if (nivelSeleccionado) {
+      obtenerGradosPorNivel(nivelSeleccionado, setGrados);
+
+      setGrupos([]);
+      setGradoSeleccionado(null);
+    }
+  }, [nivelSeleccionado]);
+
+  useEffect(() => {
+    if (gradoSeleccionado) {
+      obtenerGruposPorGrados(gradoSeleccionado, setGrupos);
+    }
+  }, [gradoSeleccionado]);
+  /*nivel grado grupo */
+
+  useEffect(() => {
+    if (grupoSeleccionado) {
+      obtenerMateriasGrupo(
+        nivelSeleccionado,
+        gradoSeleccionado,
+        grupoSeleccionado,
+        setMaterias,
+      );
+    } else {
+      setMaterias([]);
+    }
+  }, [grupoSeleccionado]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -65,14 +112,29 @@ export default function TareaAsignar() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Formulario enviado:", formData);
+    handleSaveTarea(formData);
   };
+
+  useEffect(() => {
+    if (nivelSeleccionado) {
+      obtenerGradosPorNivel(nivelSeleccionado, setGrados);
+
+      setGrupos([]);
+      setGradoSeleccionado(null);
+    } else {
+      setGrados([]);
+      setGrupos([]);
+    }
+  }, [nivelSeleccionado]);
 
   return (
     <Layout>
       <div className="container mt-2"></div>
 
-      <div className="container-fluid py-4 py-lg-4" style={{ paddingLeft: "3px" }}>
+      <div
+        className="container-fluid py-4 py-lg-4"
+        style={{ paddingLeft: "3px" }}
+      >
         <div className="row g-4 g-lg-4">
           <div className="col-lg-12">
             <div className="card mb-4 mb-lg-4">
@@ -89,10 +151,30 @@ export default function TareaAsignar() {
                         <select
                           name="nivel_tarea"
                           value={formData.nivel_tarea}
-                          onChange={handleChange}
                           className="form-control"
+                          onChange={(e) => {
+                            handleChange(e);
+
+                            setNivelSeleccionado(e.target.value);
+
+                            setGrupoSeleccionado(null);
+                            setMaterias([]);
+
+                            setFormData((prev) => ({
+                              ...prev,
+                              grado_tarea: "0",
+                              grupo_tarea: "0",
+                              materia_tarea: "0",
+                            }));
+                          }}
                         >
                           <option value="0">Selecciona una opción</option>
+
+                          {niveles.map((nivel) => (
+                            <option key={nivel.id_nivel} value={nivel.id_nivel}>
+                              {nivel.nombre}
+                            </option>
+                          ))}
                         </select>
                       </div>
 
@@ -102,10 +184,33 @@ export default function TareaAsignar() {
                         <select
                           name="grado_tarea"
                           value={formData.grado_tarea}
-                          onChange={handleChange}
                           className="form-control"
+                          disabled={
+                            !formData.nivel_tarea ||
+                            formData.nivel_tarea === "0"
+                          }
+                          onChange={(e) => {
+                            handleChange(e);
+
+                            setGradoSeleccionado(e.target.value);
+
+                            setGrupoSeleccionado(null);
+                            setMaterias([]);
+
+                            setFormData((prev) => ({
+                              ...prev,
+                              grupo_tarea: "0",
+                              materia_tarea: "0",
+                            }));
+                          }}
                         >
                           <option value="0">Selecciona una opción</option>
+
+                          {grados.map((grado) => (
+                            <option key={grado.id_grado} value={grado.id_grado}>
+                              {grado.nombre}
+                            </option>
+                          ))}
                         </select>
                       </div>
 
@@ -115,10 +220,23 @@ export default function TareaAsignar() {
                         <select
                           name="grupo_tarea"
                           value={formData.grupo_tarea}
-                          onChange={handleChange}
                           className="form-control"
+                          disabled={
+                            !formData.grado_tarea ||
+                            formData.grado_tarea === "0"
+                          }
+                          onChange={(e) => {
+                            handleChange(e);
+                            setGrupoSeleccionado(e.target.value);
+                          }}
                         >
                           <option value="0">Selecciona una opción</option>
+
+                          {grupos.map((grupo) => (
+                            <option key={grupo.id_grupo} value={grupo.id_grupo}>
+                              {grupo.nombre}
+                            </option>
+                          ))}
                         </select>
                       </div>
 
@@ -130,8 +248,18 @@ export default function TareaAsignar() {
                           value={formData.materia_tarea}
                           onChange={handleChange}
                           className="form-control"
+                          disabled={materias.length === 0}
                         >
                           <option value="0">Selecciona una opción</option>
+
+                          {materias.map((materia) => (
+                            <option
+                              key={materia.id_asignar_materia}
+                              value={materia.id_materia}
+                            >
+                              {materia.nombre}
+                            </option>
+                          ))}
                         </select>
                       </div>
                     </div>
@@ -156,7 +284,7 @@ export default function TareaAsignar() {
                               writer.setStyle(
                                 "min-height",
                                 "150px",
-                                editor.editing.view.document.getRoot()
+                                editor.editing.view.document.getRoot(),
                               );
                             });
                           }}
@@ -166,7 +294,10 @@ export default function TareaAsignar() {
                       {/* Archivos dinámicos */}
                       <label className="mt-3 d-block">Adjuntar Archivos</label>
                       {formData.archivos.map((archivo, index) => (
-                        <div className="d-flex align-items-center mt-2" key={index}>
+                        <div
+                          className="d-flex align-items-center mt-2"
+                          key={index}
+                        >
                           <input
                             type="file"
                             className="form-control me-2"
@@ -181,7 +312,10 @@ export default function TareaAsignar() {
                               style={{ padding: "5px 7px" }}
                               onClick={() => removeFileField(index)}
                             >
-                              <span className="material-icons" style={{ fontSize: "20px" }}>
+                              <span
+                                className="material-icons"
+                                style={{ fontSize: "20px" }}
+                              >
                                 delete
                               </span>
                             </button>
@@ -194,7 +328,10 @@ export default function TareaAsignar() {
                                 style={{ padding: "5px 7px" }}
                                 onClick={addFileField}
                               >
-                                <span className="material-icons" style={{ fontSize: "20px" }}>
+                                <span
+                                  className="material-icons"
+                                  style={{ fontSize: "20px" }}
+                                >
                                   add
                                 </span>
                               </button>
@@ -205,12 +342,17 @@ export default function TareaAsignar() {
                       {/* URLs dinámicas */}
                       <label className="mt-3 d-block">Agregar URLs</label>
                       {formData.urls.map((url, index) => (
-                        <div className="d-flex align-items-center mt-2" key={index}>
+                        <div
+                          className="d-flex align-items-center mt-2"
+                          key={index}
+                        >
                           <input
                             type="text"
                             className="form-control me-2"
                             value={url}
-                            onChange={(e) => handleUrlChange(index, e.target.value)}
+                            onChange={(e) =>
+                              handleUrlChange(index, e.target.value)
+                            }
                             placeholder="https://..."
                           />
                           {formData.urls.length > 1 && (
@@ -220,7 +362,10 @@ export default function TareaAsignar() {
                               style={{ padding: "5px 7px" }}
                               onClick={() => removeUrlField(index)}
                             >
-                              <span className="material-icons" style={{ fontSize: "20px" }}>
+                              <span
+                                className="material-icons"
+                                style={{ fontSize: "20px" }}
+                              >
                                 delete
                               </span>
                             </button>
@@ -233,7 +378,10 @@ export default function TareaAsignar() {
                                 style={{ padding: "5px 7px" }}
                                 onClick={addUrlField}
                               >
-                                <span className="material-icons" style={{ fontSize: "20px" }}>
+                                <span
+                                  className="material-icons"
+                                  style={{ fontSize: "20px" }}
+                                >
                                   add
                                 </span>
                               </button>

@@ -60,33 +60,16 @@ export default function Tareas() {
 
   const columns = [
     {
-      name: "Nivel",
       label: "Nivel",
-      type: "select",
-      options: niveles.map((n) => ({
-        value: n.id_nivel,
-        label: n.nombre,
-      })),
-      onChange: (e) => setNivelSeleccionado(e.target.value),
+      key: "nivel",
     },
     {
-      name: "Grado",
       label: "Grado",
-      type: "select",
-      options: grados.map((g) => ({
-        value: g.id_grado,
-        label: g.nombre,
-      })),
-      onChange: (e) => setGradoSeleccionado(e.target.value),
+      key: "grado",
     },
     {
-      name: "Grupo",
       label: "Grupo",
-      type: "select",
-      options: grupos.map((g) => ({
-        value: g.id_grupo,
-        label: g.nombre,
-      })),
+      key: "grupo",
     },
     { label: "Creado", key: "creada" },
     { label: "Materia", key: "materia" },

@@ -111,10 +111,7 @@ export default function Calendario() {
     setForm((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
   };
 
-
-
   // toda la escuela
-
 
   useEffect(() => {
     // console.log("¿Toda la escuela?", todaEscuela);
@@ -124,7 +121,6 @@ export default function Calendario() {
       setGradoSeleccionado(null);
     }
   }, [todaEscuela]);
-
 
 
   const formFieldsCalendario = useMemo(
@@ -226,6 +222,7 @@ export default function Calendario() {
                     events={events}
                     startAccessor="start"
                     endAccessor="end"
+                    views={["month"]}
                     selectable
                     onSelectEvent={(event) =>
                       handleDelete(event, () => obtenerEventos(setEvento))

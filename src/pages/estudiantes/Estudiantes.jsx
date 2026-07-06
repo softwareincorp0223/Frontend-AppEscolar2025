@@ -18,6 +18,7 @@ import { obtenerGradosPorNivel } from "../../functions/GradosActions";
 import { obtenerGruposPorGrados } from "../../functions/GruposActions";
 import { obtenerPadres } from "../../functions/PadresActions";
 import { exportarExcel } from "../../functions/general/exportarExcel";
+import DetailsContainer from "../../functions/general/DetailsContainer";
 
 export default function Estudiantes() {
   const [alumnos, setAlumnos] = useState([]);
@@ -191,10 +192,12 @@ export default function Estudiantes() {
         required: true,
       },
       {
-        name: "Foto",
-        label: "Foto",
-        type: "text",
-      },
+        name: "imagen",
+        label: "Imagen",
+        type: "file",
+        accept: "image/*",
+        required: false
+      }
     ],
     [niveles, grados, grupos],
   );
@@ -248,37 +251,37 @@ export default function Estudiantes() {
           onFilterChange={manejarCambioFiltros}
         />
 
-        {selectedEstudiante ? (
+        <Table
+          id="alumnosTable"
+          title="Alumnos"
+          columns={columns}
+          data={alumnos}
+          showCheckbox
+          renderActions={(row) => (
+            <ActionButtons
+              row={row}
+              setSelectedUser={setSelectedEstudiante}
+              onEdit={() => setEditing(row)}
+              onDelete={() => handleDelete(row, setAlumnos)}
+              actions={["view", "edit", "delete"]}
+            />
+          )}
+          headerButtons={(row) => (
+            <TableButtons
+              row={row}
+              actions={["delete", "excel"]}
+              onActions={tableHandlers}
+            />
+          )}
+          onSelectionChange={(ids) => setDeleteCheck(ids)}
+        />
+
+        <DetailsContainer visible={!!selectedEstudiante}>
           <EstudianteDetails
             estudiante={selectedEstudiante}
             onClose={() => setSelectedEstudiante(null)}
           />
-        ) : (
-          <Table
-            id="alumnosTable"
-            title="Alumnos"
-            columns={columns}
-            data={alumnos}
-            showCheckbox
-            renderActions={(row) => (
-              <ActionButtons
-                row={row}
-                setSelectedUser={setSelectedEstudiante}
-                onEdit={() => setEditing(row)}
-                onDelete={() => handleDelete(row, setAlumnos)}
-                actions={["view", "edit", "delete"]}
-              />
-            )}
-            headerButtons={(row) => (
-              <TableButtons
-                row={row}
-                actions={["delete", "excel"]}
-                onActions={tableHandlers}
-              />
-            )}
-            onSelectionChange={(ids) => setDeleteCheck(ids)}
-          />
-        )}
+        </DetailsContainer>
       </div>
     </Layout>
   );

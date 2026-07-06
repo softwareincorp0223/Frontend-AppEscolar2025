@@ -4,7 +4,12 @@ import Table from "../../components/Table";
 import Form from "../../components/Form";
 import ActionButtons from "../../components/ActionButtons";
 import UserDetails from "../../components/details/UserDetails";
-import { obtenerUsuarios, obtenerRoles, handleDelete, handleSave } from "../../functions/UsuariosActions";
+import {
+  obtenerUsuarios,
+  obtenerRoles,
+  handleDelete,
+  handleSave,
+} from "../../functions/UsuariosActions";
 
 export default function Usuarios() {
   const [usuarios, setUsuarios] = useState([]);
@@ -16,14 +21,37 @@ export default function Usuarios() {
     obtenerUsuarios(setUsuarios);
     obtenerRoles(setRoles);
     console.log(usuarios);
-    
   }, []);
 
   const formFields = [
-    { name: "nombre", label: "Nombre", type: "text", placeholder: "Nombre", required: true },
-    { name: "apellido", label: "Apellido", type: "text", placeholder: "Apellido", required: true },
-    { name: "correo", label: "Correo", type: "email", placeholder: "Correo", required: true },
-    { name: "password", label: "Contraseña", type: "password", placeholder: "******", required: true },
+    {
+      name: "nombre",
+      label: "Nombre",
+      type: "text",
+      placeholder: "Nombre",
+      required: true,
+    },
+    {
+      name: "apellido",
+      label: "Apellido",
+      type: "text",
+      placeholder: "Apellido",
+      required: true,
+    },
+    {
+      name: "correo",
+      label: "Correo",
+      type: "email",
+      placeholder: "Correo",
+      required: true,
+    },
+    {
+      name: "password",
+      label: "Contraseña",
+      type: "password",
+      placeholder: "******",
+      required: true,
+    },
     {
       name: "rol",
       label: "Selecciona una opción",
@@ -47,7 +75,11 @@ export default function Usuarios() {
         title={editingUser ? "Editar Usuario" : "Agregar Usuario"}
         fields={formFields}
         columns={3}
-        onSubmit={(values) => handleSave(values, editingUser, setEditingUser, () => obtenerUsuarios(setUsuarios))}
+        onSubmit={(values) =>
+          handleSave(values, editingUser, setEditingUser, () =>
+            obtenerUsuarios(setUsuarios),
+          )
+        }
         initialValues={
           editingUser
             ? {
@@ -61,9 +93,7 @@ export default function Usuarios() {
         }
       />
 
-      {selectedUser ? (
-        <UserDetails user={selectedUser} onClose={() => setSelectedUser(null)} />
-      ) : (
+      <>
         <Table
           id="usuariosTable"
           title="Usuarios"
@@ -73,13 +103,22 @@ export default function Usuarios() {
             <ActionButtons
               row={row}
               setSelectedUser={setSelectedUser}
-              onDelete={() => handleDelete(row, () => obtenerUsuarios(setUsuarios))}
+              onDelete={() =>
+                handleDelete(row, () => obtenerUsuarios(setUsuarios))
+              }
               onEdit={() => setEditingUser(row)}
               actions={["edit", "delete"]}
             />
           )}
         />
-      )}
+
+        {selectedUser && (
+          <UserDetails
+            user={selectedUser}
+            onClose={() => setSelectedUser(null)}
+          />
+        )}
+      </>
     </Layout>
   );
 }

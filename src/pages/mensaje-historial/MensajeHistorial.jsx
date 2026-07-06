@@ -23,7 +23,7 @@ export default function MensajeHistorial() {
     <Layout>
       <Table
         id="historialMensajeTable"
-        title="Hitorial de Mensajes"
+        title="Historial de Mensajes"
         columns={columnsHistorialMensaje}
         data={historialMensaje}
       />

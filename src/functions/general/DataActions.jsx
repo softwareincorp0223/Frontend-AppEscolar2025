@@ -92,7 +92,14 @@ export async function InstitutoDataUpdate(endpoint, data) {
     return res.data;
   } catch (error) {
     if (error.response) {
-      throw new Error(error.response.data?.message || "Error en el servidor");
+      console.log(error.response?.data);
+
+    throw new Error(
+      error.response?.data?.details ||
+      error.response?.data?.error ||
+      JSON.stringify(error.response?.data) ||
+      error.message
+);
     } else if (error.request) {
       throw new Error("Error de conexión con el servidor (CORS o red)");
     } else {
