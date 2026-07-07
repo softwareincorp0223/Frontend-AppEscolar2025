@@ -6,10 +6,41 @@ import ActionButtons from "../../components/ActionButtons";
 import Filter from "../../components/Filter";
 import { filtrarTabla } from "../../functions/general/Functions";
 import { obtenerTareas } from "../../functions/TeareasActions";
+import { obtenerNiveles } from "../../functions/NivelesActions";
+import { obtenerGradosPorNivel } from "../../functions/GradosActions";
+import { obtenerGruposPorGrados } from "../../functions/GruposActions";
 
 export default function Tareas() {
   const [tareas, setTareas] = useState([]);
   const [tareasOriginal, setTareasOriginal] = useState([]);
+
+  const [niveles, setNiveles] = useState([]);
+  const [grados, setGrados] = useState([]);
+  const [grupos, setGrupos] = useState([]);
+
+  const [nivelSeleccionado, setNivelSeleccionado] = useState(null);
+  const [gradoSeleccionado, setGradoSeleccionado] = useState(null);
+
+  /*nivel grado grupo */
+  useEffect(() => {
+    obtenerNiveles(setNiveles);
+  }, []);
+
+  useEffect(() => {
+    if (nivelSeleccionado) {
+      obtenerGradosPorNivel(nivelSeleccionado, setGrados);
+
+      setGrupos([]);
+      setGradoSeleccionado(null);
+    }
+  }, [nivelSeleccionado]);
+
+  useEffect(() => {
+    if (gradoSeleccionado) {
+      obtenerGruposPorGrados(gradoSeleccionado, setGrupos);
+    }
+  }, [gradoSeleccionado]);
+  /*nivel grado grupo */
 
   const manejarCambioFiltros = (f) => {
     const resultado = filtrarTabla({
@@ -27,22 +58,19 @@ export default function Tareas() {
     });
   }, []);
 
-  /*const dataTareas = [
-    {
-      mensaje_id: "1",
-      nivel: "nivel",
-      grado: "grado",
-      grupo: "grupo",
-      creada: "creada",
-      materia: "materia",
-      profesor: "profesor",
-    },
-  ];*/
-
   const columns = [
-    { label: "Nivel", key: "nivel" },
-    { label: "Grado", key: "grado" },
-    { label: "Grupo", key: "grupo" },
+    {
+      label: "Nivel",
+      key: "nivel",
+    },
+    {
+      label: "Grado",
+      key: "grado",
+    },
+    {
+      label: "Grupo",
+      key: "grupo",
+    },
     { label: "Creado", key: "creada" },
     { label: "Materia", key: "materia" },
     { label: "Profesor", key: "profesor" },

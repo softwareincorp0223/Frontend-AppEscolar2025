@@ -40,7 +40,7 @@ export const handleDelete = async (row, obtenerUsuarios) => {
 
 export const handleSave = async (values, editingUser, setEditingUser, obtenerUsuarios) => {
   const sid_instituto = localStorage.getItem("sid_instituto");
-  const fecha = fechaFormateada();
+  const fecha = fechaFormateada(new Date());
 
   const payload = {
     id_usuario: editingUser ? editingUser.id_usuario : null,
@@ -59,6 +59,8 @@ export const handleSave = async (values, editingUser, setEditingUser, obtenerUsu
     showAlert("success", "Usuario actualizado correctamente");
     setEditingUser(null);
   } else {
+    console.log(payload);
+    
     await InstitutoDataAdd("usuario", payload);
     showAlert("success", "Usuario agregado correctamente");
   }

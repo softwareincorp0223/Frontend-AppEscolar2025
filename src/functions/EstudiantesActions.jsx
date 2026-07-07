@@ -7,6 +7,7 @@ import {
   InstitutoDataUpdate,
 } from "./general/DataActions";
 import { generarCodigoQR } from "./general/Functions";
+import { phpRequest } from "./general/PhpDataActions";
 
 export const obtenerAlumnos = async (setAlumnos) => {
   try {
@@ -23,10 +24,33 @@ export const obtenerAlumnos = async (setAlumnos) => {
   }
 };
 
-export const handleSaveAlumnos = async (values, editing, setEditing, obtenerAlumnos) => {
-
+export const handleSaveAlumnos = async (
+  values,
+  editing,
+  setEditing,
+  obtenerAlumnos
+) => {
   const sid_instituto = localStorage.getItem("sid_instituto");
 
+  let foto = editing?.foto || null;
+
+  // Subir imagen a Google Drive
+  if (values.imagen) {
+    const formData = new FormData();
+
+    formData.append("files", values.imagen);
+
+    const response = await InstitutoDataAdd(
+      "drive/upload",
+      formData
+    );
+
+    if (response.ok && response.files.length > 0) {
+      foto = response.files[0].url;
+    }
+  }
+
+  // Payload alumno
   const payload = {
     id_alumno: editing ? editing.id_alumno : null,
     nombre: values.nombre,
@@ -38,7 +62,7 @@ export const handleSaveAlumnos = async (values, editing, setEditing, obtenerAlum
     sid_grado: values.Grado,
     sid_grupo: values.Grupo,
     sid_padre: values.Padre,
-    foto: values.Foto,
+    foto,
     nombre_contacto: "Sin datos",
     telefono_contacto: "Sin datos",
     alergias: "Sin datos",
@@ -46,12 +70,31 @@ export const handleSaveAlumnos = async (values, editing, setEditing, obtenerAlum
   };
 
   if (editing) {
-    await InstitutoDataUpdate(`alumno/${editing.id_alumno}`, payload);
-    showAlert("success", "Alumno actualizado correctamente");
+    await InstitutoDataUpdate(
+      `alumno/${editing.id_alumno}`,
+      payload
+    );
+
+    showAlert(
+      "success",
+      "Alumno actualizado correctamente"
+    );
+
     setEditing(null);
   } else {
-    await InstitutoDataAdd("alumno", payload);
-    showAlert("success", "Alumno agregado correctamente");
+    const res = await InstitutoDataAdd(
+      "alumno",
+      payload
+    );
+
+    await phpRequest("alumno.php", "modificar", {
+      id_alumno: res.id_alumno,
+    });
+
+    showAlert(
+      "success",
+      "Alumno agregado correctamente"
+    );
   }
 
   await obtenerAlumnos();
@@ -60,12 +103,14 @@ export const handleSaveAlumnos = async (values, editing, setEditing, obtenerAlum
 export const obtenerAlumnosPadres = async (id_padre, setAlumnos) => {
   try {
     const alumnosPadreApi = await InstitutoDataFilter("alumno?include=Nivel,Grado,Grupo&sid_padre=" + id_padre);
+    const padreQR = await phpRequest("padre.php", "consultar", { id_padre: id_padre });
     
     const formateados = alumnosPadreApi.map((data) => ({
       ...data,
       nivel: data.Nivel?.nombre || "Sin Nivel",
       grado: data.Grado?.nombre || "Sin Grado",
       grupo: data.Grupo?.nombre || "Sin Grado",
+      padreQR: padreQR?.codigo_qr || "Sin QR",
     }));
     setAlumnos(formateados);
 
@@ -84,6 +129,16 @@ export const handleDeleteVarios = async (ids, setEstudiantes) => {
   const result = await showAlert("delete", "¿Deseas eliminar varios estudiantes?");
   if (!result.isConfirmed) return;
   await InstitutoDataDelete(ids, "alumno", "id_alumno");
+  await obtenerAlumnos(setEstudiantes); // refrescar tabla
+  showAlert("success", "Estudiante eliminado correctamente");
+};
+
+export const handleDelete = async (row, setEstudiantes) => {
+  const result = await showAlert("delete", "¿Deseas eliminar este estudiante?");
+
+  console.log(row)
+  if (!result.isConfirmed) return;
+  await InstitutoDataDelete(`alumno/${row.id_alumno}`);
   await obtenerAlumnos(setEstudiantes); // refrescar tabla
   showAlert("success", "Estudiante eliminado correctamente");
 };

@@ -7,8 +7,8 @@ export const filtrarDatos = (filtros, dataOriginal) => {
 
     filtrado = filtrado.filter((d) =>
       Object.values(d).some((valor) =>
-        String(valor).toLowerCase().includes(buscarLower)
-      )
+        String(valor).toLowerCase().includes(buscarLower),
+      ),
     );
   }
 
@@ -26,13 +26,13 @@ export const filtrarDatos = (filtros, dataOriginal) => {
 
   if (filtros.desde) {
     filtrado = filtrado.filter(
-      (d) => new Date(d.fecha_y_hora) >= new Date(filtros.desde)
+      (d) => new Date(d.fecha_y_hora) >= new Date(filtros.desde),
     );
   }
 
   if (filtros.hasta) {
     filtrado = filtrado.filter(
-      (d) => new Date(d.fecha_y_hora) <= new Date(filtros.hasta)
+      (d) => new Date(d.fecha_y_hora) <= new Date(filtros.hasta),
     );
   }
 
@@ -70,7 +70,7 @@ export function fechaFormateada(fecha, { paraUI = false } = {}) {
 
     default:
       alert(
-        `No se pudo formatear la fecha.\nValor recibido: ${fecha}\nAgrega un nuevo case.`
+        `No se pudo formatear la fecha.\nValor recibido: ${fecha}\nAgrega un nuevo case.`,
       );
       return fecha;
   }
@@ -108,7 +108,7 @@ export const convertirLogoABase64 = async (ruta) => {
   });
 };
 
-function getField(obj, fields = []) {
+export function getField(obj, fields = []) {
   for (const field of fields) {
     const value = field.split(".").reduce((acc, key) => acc?.[key], obj);
 
@@ -119,7 +119,7 @@ function getField(obj, fields = []) {
   return null;
 }
 
-function normalizarFecha(valor) {
+export function normalizarFecha(valor) {
   if (!valor) return null;
 
   // Si ya es Date
@@ -182,7 +182,7 @@ export function filtrarTabla({ filtros, dataOriginal }) {
   // NIVEL
   if (filtros.nivel) {
     resultado = resultado.filter(
-      (a) => getField(a, FIELD_MAP.nivel) === filtros.nivel
+      (a) => getField(a, FIELD_MAP.nivel) === filtros.nivel,
     );
   }
   console.log(resultado);
@@ -190,7 +190,7 @@ export function filtrarTabla({ filtros, dataOriginal }) {
   // GRADO
   if (filtros.grado) {
     resultado = resultado.filter(
-      (a) => getField(a, FIELD_MAP.grado) === filtros.grado
+      (a) => getField(a, FIELD_MAP.grado) === filtros.grado,
     );
   }
 
@@ -198,7 +198,7 @@ export function filtrarTabla({ filtros, dataOriginal }) {
   if (filtros.grupo) {
     const g = filtros.grupo.toLowerCase();
     resultado = resultado.filter(
-      (a) => getField(a, FIELD_MAP.grupo)?.toLowerCase() === g
+      (a) => getField(a, FIELD_MAP.grupo)?.toLowerCase() === g,
     );
   }
 
@@ -246,6 +246,23 @@ export function descargarQR() {
 }
 
 export const generarCodigoQR = () =>
-    crypto
-      .getRandomValues(new Uint8Array(16))
-      .reduce((acc, byte) => acc + byte.toString(16).padStart(2, "0"), "");
+  crypto
+    .getRandomValues(new Uint8Array(16))
+    .reduce((acc, byte) => acc + byte.toString(16).padStart(2, "0"), "");
+
+export const mapReceptor = (value) => {
+  switch (Number(value)) {
+    case 1:
+      return "Estudiantes";
+    case 2:
+      return "Nivel Grado y Grupo";
+    case 3:
+      return "Masivo";
+    case 4:
+      return "Especifico";
+    case 5:
+      return "Extracurricular";
+    default:
+      return "Sin destinatario";
+  }
+};

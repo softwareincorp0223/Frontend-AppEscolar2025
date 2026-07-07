@@ -14,6 +14,7 @@ import {
 import { exportarExcel } from "../../functions/general/exportarExcel";
 import { exportarPDF } from "../../functions/general/ExportarPDF";
 import PadreDetails from "../../components/details/PadresDetails";
+import DetailsContainer from "../../functions/general/DetailsContainer";
 
 export default function Padres() {
   const [padres, setPadres] = useState([]);
@@ -84,18 +85,13 @@ export default function Padres() {
           columns={3}
           onSubmit={(values) =>
             handleSave(values, editing, setEditing, () =>
-              obtenerPadres(setPadres)
+              obtenerPadres(setPadres),
             )
           }
           initialValues={editing || {}}
         />
 
-        {selectedPadre ? (
-          <PadreDetails
-            padre={selectedPadre}
-            onClose={() => setSelectedPadre(null)}
-          />
-        ) : (
+        <>
           <Table
             id="padresTable"
             title="Padres"
@@ -122,7 +118,14 @@ export default function Padres() {
             )}
             onSelectionChange={(ids) => setDeleteCheck(ids)}
           />
-        )}
+
+          <DetailsContainer visible={!!selectedPadre}>
+            <PadreDetails
+              padre={selectedPadre}
+              onClose={() => setSelectedPadre(null)}
+            />
+          </DetailsContainer>
+        </>
       </div>
     </Layout>
   );

@@ -32,7 +32,28 @@ export default function Asistencias() {
     { label: "Grado", key: "grado" },
     { label: "Grupo", key: "grupo" },
     { label: "Fecha Hora", key: "fecha_y_hora" },
-    { label: "Tipo", key: "tipo" },
+    {
+      label: "Tipo",
+      key: "tipo",
+      render: (row) => {
+        const esEntrada = row.tipo?.toLowerCase() === "entrada";
+        return `
+        <span
+          style="
+            display:inline-block;
+            padding:3px 10px;
+            border-radius:10px;
+            font-size:12px;
+            font-weight:700;
+            color:white;
+            background:${esEntrada ? "#22c55e" : "#ef4444"};
+          "
+        >
+        ${row.tipo}
+      </span>
+    `;
+      },
+    },
     { label: "Registrado por", key: "registrado_por" },
   ];
 

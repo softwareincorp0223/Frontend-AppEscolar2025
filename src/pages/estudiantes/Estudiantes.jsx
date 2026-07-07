@@ -8,6 +8,7 @@ import {
   obtenerAlumnos,
   handleSaveAlumnos,
   handleDeleteVarios,
+  handleDelete,
 } from "../../functions/EstudiantesActions";
 import { filtrarTabla } from "../../functions/general/Functions";
 import EstudianteDetails from "../../components/details/EstudiantesDetails";
@@ -17,6 +18,7 @@ import { obtenerGradosPorNivel } from "../../functions/GradosActions";
 import { obtenerGruposPorGrados } from "../../functions/GruposActions";
 import { obtenerPadres } from "../../functions/PadresActions";
 import { exportarExcel } from "../../functions/general/exportarExcel";
+import DetailsContainer from "../../functions/general/DetailsContainer";
 
 export default function Estudiantes() {
   const [alumnos, setAlumnos] = useState([]);
@@ -55,12 +57,27 @@ export default function Estudiantes() {
       setGradoSeleccionado(null);
     }
   }, [nivelSeleccionado]);
+  console.log(editing);
 
   useEffect(() => {
     if (gradoSeleccionado) {
       obtenerGruposPorGrados(gradoSeleccionado, setGrupos);
     }
   }, [gradoSeleccionado]);
+
+  useEffect(() => {
+    if (editing) {
+      setNivelSeleccionado(editing.sid_nivel);
+      setGradoSeleccionado(editing.sid_grado);
+
+      // Cargar grados y grupos automáticamente
+      obtenerGradosPorNivel(editing.sid_nivel, (resGrados) => {
+        setGrados(resGrados);
+
+        obtenerGruposPorGrados(editing.sid_grado, setGrupos);
+      });
+    }
+  }, [editing]);
 
   /* =========================
      FILTROS
@@ -169,19 +186,29 @@ export default function Estudiantes() {
         label: "Padre",
         type: "select",
         options: padres.map((r) => ({
-          value: r.id_padre,
-          label: r.nombre + ' ' + r.apellido,
+          value: String(r.id_padre),
+          label: r.nombre + " " + r.apellido,
         })),
         required: true,
       },
       {
-        name: "Foto",
-        label: "Foto",
-        type: "text",
-      },
+        name: "imagen",
+        label: "Imagen",
+        type: "file",
+        accept: "image/*",
+        required: false
+      }
     ],
-    [niveles, grados, grupos]
+    [niveles, grados, grupos],
   );
+
+  const resetFormulario = () => {
+    setEditing(null); // 🔥 salir de modo edición
+    setNivelSeleccionado(null); // limpiar selects dependientes
+    setGradoSeleccionado(null);
+    setGrados([]);
+    setGrupos([]);
+  };
 
   /* =========================
      INITIAL VALUES ESTABLES
@@ -192,14 +219,29 @@ export default function Estudiantes() {
     <Layout>
       <div className="container-fluid pb-4">
         <Form
+          key={editing ? editing.id : "new"}
           title={editing ? "Editar Estudiante" : "Agregar Estudiante"}
           fields={formFields}
           columns={3}
-          initialValues={initialFormValues}
           onSubmit={(values) =>
-            handleSaveAlumnos(values, editing, setEditing, () =>
-              obtenerAlumnos(setAlumnos)
-            )
+            handleSaveAlumnos(values, editing, setEditing, () => {
+              obtenerAlumnos(setAlumnos);
+              resetFormulario();
+            })
+          }
+          initialValues={
+            editing
+              ? {
+                  nombre: editing.nombre,
+                  apellido: editing.apellido,
+                  matricula: editing.matricula,
+                  Sexo: editing.sexo,
+                  Nivel: nivelSeleccionado || editing.sid_nivel,
+                  Grado: gradoSeleccionado || editing.sid_grado,
+                  Grupo: editing.sid_grupo,
+                  Padre: String(editing.sid_padre),
+                }
+              : {}
           }
         />
 
@@ -209,35 +251,37 @@ export default function Estudiantes() {
           onFilterChange={manejarCambioFiltros}
         />
 
-        {selectedEstudiante ? (
+        <Table
+          id="alumnosTable"
+          title="Alumnos"
+          columns={columns}
+          data={alumnos}
+          showCheckbox
+          renderActions={(row) => (
+            <ActionButtons
+              row={row}
+              setSelectedUser={setSelectedEstudiante}
+              onEdit={() => setEditing(row)}
+              onDelete={() => handleDelete(row, setAlumnos)}
+              actions={["view", "edit", "delete"]}
+            />
+          )}
+          headerButtons={(row) => (
+            <TableButtons
+              row={row}
+              actions={["delete", "excel"]}
+              onActions={tableHandlers}
+            />
+          )}
+          onSelectionChange={(ids) => setDeleteCheck(ids)}
+        />
+
+        <DetailsContainer visible={!!selectedEstudiante}>
           <EstudianteDetails
             estudiante={selectedEstudiante}
             onClose={() => setSelectedEstudiante(null)}
           />
-        ) : (
-          <Table
-            id="alumnosTable"
-            title="Alumnos"
-            columns={columns}
-            data={alumnos}
-            showCheckbox
-            renderActions={(row) => (
-              <ActionButtons
-                row={row}
-                setSelectedUser={setSelectedEstudiante}
-                actions={["view", "edit", "delete"]}
-              />
-            )}
-            headerButtons={(row) => (
-              <TableButtons
-                row={row}
-                actions={["delete", "excel"]}
-                onActions={tableHandlers}
-              />
-            )}
-            onSelectionChange={(ids) => setDeleteCheck(ids)}
-          />
-        )}
+        </DetailsContainer>
       </div>
     </Layout>
   );

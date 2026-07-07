@@ -9,20 +9,17 @@ const sid_instituto = localStorage.getItem("sid_instituto");
 
 //leer datos de API por instituto
 export async function InstitutoData(consulta) {
-console.log(API_URL + consulta + sid_instituto);
+  console.log(API_URL + consulta + sid_instituto);
 
   try {
-    const res = await axios.get(
-      API_URL + consulta + sid_instituto,
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    const res = await axios.get(API_URL + consulta + sid_instituto, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
 
     // Aquí asumimos que la respuesta trae user + token
-    const data =  res.data;
+    const data = res.data;
 
     return data;
   } catch (error) {
@@ -58,17 +55,16 @@ export async function InstitutoDataFilter(consulta) {
 //agregar datos de API por instituto
 export async function InstitutoDataAdd(endpoint, data) {
   try {
-    const res = await axios.post(
-      API_URL + endpoint,
-      data, // los datos que quieres enviar
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    const isFormData = data instanceof FormData;
 
-    // Devolvemos la respuesta del servidor
+    const res = await axios.post(API_URL + endpoint, data, {
+      headers: isFormData
+        ? {}
+        : {
+            "Content-Type": "application/json",
+          },
+    });
+
     return res.data;
   } catch (error) {
     if (error.response) {
@@ -83,17 +79,16 @@ export async function InstitutoDataAdd(endpoint, data) {
 
 export async function InstitutoDataUpdate(endpoint, data) {
   try {
-    const res = await axios.put(
-      API_URL + endpoint,
-      data, // los datos que quieres enviar
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    const isFormData = data instanceof FormData;
 
-    // Devolvemos la respuesta del servidor
+    const res = await axios.put(API_URL + endpoint, data, {
+      headers: isFormData
+        ? {}
+        : {
+            "Content-Type": "application/json",
+          },
+    });
+
     return res.data;
   } catch (error) {
     if (error.response) {
@@ -125,7 +120,7 @@ export async function InstitutoDataDelete(endpointOrIds, endpoint, id_field) {
 
     // Caso 1: eliminar varios (array de IDs)
     if (Array.isArray(endpointOrIds)) {
-      url += endpoint; 
+      url += endpoint;
       options.data = { ids: endpointOrIds, idField: id_field };
     }
     // Caso 2: eliminar uno solo (endpoint string)
@@ -133,7 +128,7 @@ export async function InstitutoDataDelete(endpointOrIds, endpoint, id_field) {
       url += endpointOrIds;
     } else {
       throw new Error(
-        "Parámetro inválido: se esperaba un string o un array de IDs"
+        "Parámetro inválido: se esperaba un string o un array de IDs",
       );
     }
 

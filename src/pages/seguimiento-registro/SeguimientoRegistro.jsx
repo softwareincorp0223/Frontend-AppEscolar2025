@@ -17,8 +17,8 @@ export default function SeguimientoRegistros() {
 
   const columnsSeguimientos = [
     { label: "Estudiante", key: "nombreAlumno" },
-    { label: "Enviado", key: "fecha_registro" },
-    { label: "Visto", key: "fecha_visto" },
+    { label: "Enviado", key: "enviado" },
+    { label: "Visto", key: "visto" },
     { label: "Responsable", key: "nombreAlumno" },
     { label: "Fecha Eliminación", key: "fecha_eliminacion" },
   ];

@@ -22,7 +22,7 @@ export const obtenerAsistencias = async (setUsuarios) => {
       nivel: a.nombre_nivel,
       grado: a.nombre_grado,
       grupo: a.nombre_grupo,
-      fecha_y_hora: a.fecha_ingreso,
+      fecha_y_hora: fechaFormateada(a.fecha_ingreso, { paraUI: true }),
       tipo: a.tipo,
       registrado_por: a.nombre_usuario + ' ' + a.apellido_usuario,
     }));

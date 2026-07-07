@@ -25,9 +25,13 @@ export const obtenerSeguimientos = async (setSeguimientos) => {
 
     const formateados = seguimientosApi.map(g => ({
       ...g,
-      nombreAlumno: g.Alumno?.nombre + " " + g.Alumno?.apellido || "Sin alumno"
-    }));
 
+      nombreAlumno: g.Alumno?.nombre + " " + g.Alumno?.apellido || "Sin alumno",
+      enviado: g.fecha_registro ? fechaFormateada(g.fecha_registro, { paraUI: true }) : "Sin fecha",
+      visto: g.fecha_visto ? fechaFormateada(g.fecha_visto, { paraUI: true }) : "Sin fecha"
+    }));
+    console.log(formateados);
+    
 
     setSeguimientos(formateados);
   } catch (error) {
@@ -55,7 +59,6 @@ export const handleDelete = async (row, obtenerSeguimientos) => {
   showAlert("success", "Seguimiento eliminado correctamente");
 };
 
-
 export const obtenerSeguimientosEliminados = async (setSeguimientos) => {
   try {
     const sid_instituto = localStorage.getItem("sid_instituto");
@@ -74,7 +77,9 @@ export const obtenerSeguimientosEliminados = async (setSeguimientos) => {
 
     const formateados = seguimientosApi.map(g => ({
       ...g,
-      nombreAlumno: g.Alumno?.nombre + " " + g.Alumno?.apellido || "Sin alumno"
+      nombreAlumno: g.Alumno?.nombre + " " + g.Alumno?.apellido || "Sin alumno",
+      enviado: g.fecha_registro ? fechaFormateada(g.fecha_registro, { paraUI: true }) : "Sin fecha",
+      visto: g.fecha_visto ? fechaFormateada(g.fecha_visto, { paraUI: true }) : "Sin fecha"
     }));
 
 
