@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import Layout from "../../components/Layout";
 import Table from "../../components/Table";
-import { CKEditor } from "@ckeditor/ckeditor5-react";
-import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
 import $ from "jquery";
 import ActionButtons from "../../components/ActionButtons";
 import TableButtons from "../../components/TableButtons";
@@ -10,6 +8,7 @@ import Filter from "../../components/Filter";
 import {
   obtenerMensajes,
   handleSaveMensaje,
+  handleDelete
 } from "../../functions/MensajeActions";
 import { filtrarTabla } from "../../functions/general/Functions";
 import { obtenerTipoMensajes } from "../../functions/MensajeTipoActions";
@@ -76,7 +75,6 @@ export default function Mensaje() {
     obtenerTipoMensajes(setMensajesTipo);
     obtenerAlumnos(setAlumnos);
     obtenerExtracurricular(setExtracurriculares);
-    console.log(selectedMensaje);
   }, []);
 
   useEffect(() => {
@@ -125,8 +123,8 @@ export default function Mensaje() {
     };
   }, []);*/
 
-  const handleSubmit = (formData) => {
-    handleSaveMensaje(formData);
+  const handleSubmit = async (formData) => {
+    return await handleSaveMensaje(formData);
   };
 
   return (
@@ -175,6 +173,9 @@ export default function Mensaje() {
               renderActions={(row) => (
                 <ActionButtons
                   row={row}
+                  onDelete={() =>
+                    handleDelete(row, () => obtenerMensajes(setMensajes))
+                  }
                   actions={["view", "delete"]}
                   setSelectedUser={setSelectedMensaje}
                 />

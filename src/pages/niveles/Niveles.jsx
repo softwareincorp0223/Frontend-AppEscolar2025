@@ -160,7 +160,7 @@ export default function Niveles() {
                     handleDelete(row, () => obtenerNiveles(setNiveles))
                   }
                   onEdit={() => setEditingNivel(row)}
-                  actions={["edit", "delete"]}
+                  actions={["edit"]}
                 />
               )}
             />
@@ -197,7 +197,7 @@ export default function Niveles() {
                     handleDeleteGrados(row, () => obtenerGrados(setGrados))
                   }
                   onEdit={() => setEditingGrado(row)}
-                  actions={["edit", "delete"]}
+                  actions={["edit"]}
                 />
               )}
             />
@@ -236,7 +236,7 @@ export default function Niveles() {
                     handleDeleteGrupos(row, () => obtenerGrupos(setGrupos))
                   }
                   onEdit={() => setEditingGrupo(row)}
-                  actions={["edit", "delete"]}
+                  actions={["edit"]}
                 />
               )}
             />

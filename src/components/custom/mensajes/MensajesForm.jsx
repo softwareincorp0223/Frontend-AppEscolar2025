@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { CKEditor } from "@ckeditor/ckeditor5-react";
-import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
 import CustomSelect from "../../CustomSelect";
+
+import ReactQuill from "react-quill-new";
+import "quill/dist/quill.snow.css";
 
 export default function MensajeForm({
   mensajesTipo,
@@ -14,7 +15,7 @@ export default function MensajeForm({
   obtenerGruposPorGrados,
   onSubmit,
 }) {
-  const [formData, setFormData] = useState({
+  const initialFormData = {
     receptor: "0",
     sid_tipo: "0",
     sid_estudiante: "0",
@@ -33,7 +34,23 @@ export default function MensajeForm({
     fecha_fin_mensaje: "",
     archivos: [null],
     urls: [""],
-  });
+  };
+
+  const [formData, setFormData] = useState(initialFormData);
+  const [fileKey, setFileKey] = useState(0);
+
+  const modules = {
+    toolbar: [
+      [{ header: [1, 2, 3, false] }],
+      ["bold", "italic", "underline", "strike"],
+      [{ color: [] }, { background: [] }],
+      [{ list: "ordered" }, { list: "bullet" }],
+      [{ indent: "-1" }, { indent: "+1" }],
+      [{ align: [] }],
+      ["link", "image"],
+      ["clean"],
+    ],
+  };
 
   // 🔁 Cascada nivel → grado → grupo
   useEffect(() => {
@@ -56,6 +73,11 @@ export default function MensajeForm({
       ...formData,
       [name]: type === "checkbox" ? checked : value,
     });
+  };
+
+  const resetForm = () => {
+    setFormData(initialFormData);
+    setFileKey((prev) => prev + 1);
   };
 
   // URLs
@@ -98,10 +120,14 @@ export default function MensajeForm({
     setFormData({ ...formData, archivos: newArchivos });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    onSubmit(formData);
+    const ok = await onSubmit(formData);
+
+    if (ok) {
+      resetForm();
+    }
   };
 
   const renderReceptorFields = () => {
@@ -117,7 +143,7 @@ export default function MensajeForm({
             optionValue="id_alumno"
             optionLabel="nombre"
             placeholder="Selecciona estudiante"
-            />
+          />
         );
 
       case "2": // Nivel → Grado → Grupo
@@ -186,7 +212,7 @@ export default function MensajeForm({
             optionValue="id_alumno"
             optionLabel="nombre"
             placeholder="Selecciona estudiante"
-            />
+          />
         );
 
       case "5": // Extracurricular
@@ -270,25 +296,17 @@ export default function MensajeForm({
           {/* Mensaje */}
           <div className="mt-3">
             <label>Mensaje</label>
-            <CKEditor
-              editor={ClassicEditor}
-              data={formData.mensaje}
-              onChange={(event, editor) => {
-                const data = editor.getData();
-                setFormData((prev) => ({ ...prev, mensaje: data }));
-              }}
-              onReady={(editor) => {
-                editor.editing.view.change((writer) => {
-                  writer.setStyle(
-                    "min-height",
-                    "150px",
-                    editor.editing.view.document.getRoot(),
-                  );
-                });
-              }}
-              config={{
-                placeholder: "Escribe aquí tu mensaje...",
-              }}
+            <ReactQuill
+              theme="snow"
+              modules={modules}
+              value={formData.mensaje}
+              style={{ height: "190px", marginBottom: "50px" }}
+              onChange={(value) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  mensaje: value,
+                }))
+              }
             />
           </div>
         </div>
@@ -397,6 +415,7 @@ export default function MensajeForm({
           {formData.archivos.map((archivo, index) => (
             <div className="d-flex align-items-center mt-2" key={index}>
               <input
+                key={`${fileKey}-${index}`}
                 type="file"
                 className="form-control me-2"
                 onChange={(e) => handleArchivoChange(index, e.target.files[0])}
