@@ -7,6 +7,8 @@ import TableButtons from "../../components/TableButtons";
 import ExtracurricularDetails from "../../components/details/ExtracurricularDetails";
 import { obtenerExtracurricular, handleDelete, handleSave, obtenerExtracurricularesExcel } from "../../functions/ExtracurricularActions";
 import { exportarExcel } from "../../functions/general/exportarExcel";
+import DetailsContainer from "../../functions/general/DetailsContainer";
+
 
 export default function Extracurriculares() {
   const [extracurriculares, setExtracurriculares] = useState([]);
@@ -24,7 +26,7 @@ export default function Extracurriculares() {
     const encabezados = ["Nombre", "Apellido", "Matricula", "Nivel", "Grado", "Grupo", "Extracurricular"];
     exportarExcel("ExtracurricularInstituto", encabezados, extracurricularesExcel);
   };
-  
+
   const tableHandlers = {
     excel: botonExcel,
   };
@@ -52,7 +54,35 @@ export default function Extracurriculares() {
             : {}
         }
       />
-      {selectedExtra ? (
+      <Table
+        id="extracurricularTable"
+        title="Extracurricular"
+        columns={columnsExtracurricular}
+        data={extracurriculares}
+        renderActions={(row) => (
+          <ActionButtons
+            row={row}
+            setSelectedUser={setSelectedExtra}
+            onDelete={() => handleDelete(row, () => obtenerExtracurricular(setExtracurriculares))}
+            onEdit={() => setEditingExtracurricular(row)}
+            actions={["view", "edit", "delete"]}
+          />
+        )}
+        headerButtons={(row) => (
+          <TableButtons row={row}
+            actions={["excel"]}
+            onActions={tableHandlers}
+          />
+        )}
+      />
+
+      <DetailsContainer visible={!!selectedExtra} top={650}>
+        <ExtracurricularDetails
+          alumno={selectedExtra}
+          onClose={() => setSelectedExtra(null)}
+        />
+      </DetailsContainer>
+      {/* {selectedExtra ? (
         <ExtracurricularDetails alumno={selectedExtra} onClose={() => setSelectedExtra(null)} />
       ) : (
 
@@ -77,7 +107,7 @@ export default function Extracurriculares() {
             />
           )}
         />
-      )}
+      )} */}
     </Layout>
   );
 }

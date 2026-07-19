@@ -7,6 +7,7 @@ import { obtenerSeguimientos, handleDelete, handleDeleteVarios } from "../../fun
 import SeguimientoDetails from "../../components/details/SeguimientosDetails";
 import { exportarExcel } from "../../functions/general/exportarExcel";
 import { obtenerAsignarAtributosExcel } from "../../functions/AsignarAtributoActions";
+import DetailsContainer from "../../functions/general/DetailsContainer";
 
 
 export default function Seguimientos() {
@@ -14,7 +15,7 @@ export default function Seguimientos() {
   const [selectedExtra, setSelectedExtra] = useState(null);
   const [asignarAtributoExcel, setAsignarAtributoExcel] = useState({});
   const [deleteCheck, setDeleteCheck] = useState([]);
-  
+
 
   useEffect(() => {
     obtenerSeguimientos(setSeguimientos);
@@ -49,36 +50,46 @@ export default function Seguimientos() {
   return (
     <Layout>
 
-      {selectedExtra ? (
+
+      <Table
+        id="seguimientosTable"
+        title="Seguimientos"
+        columns={columnsSeguimientos}
+        data={seguimientos}
+        showCheckbox={true}
+        renderActions={
+          (row) => (
+            <ActionButtons
+              row={row}
+              setSelectedUser={setSelectedExtra}
+              onDelete={() => handleDelete(row, () => obtenerSeguimientos(setSeguimientos))
+              }
+              actions={["view", "delete"]}
+            />
+          )}
+        headerButtons={(row) => (
+          <TableButtons
+            row={row}
+            actions={["delete", "excel"]}
+            onActions={tableHandlers}
+          />
+        )}
+        onSelectionChange={(ids) => setDeleteCheck(ids)}
+      />
+
+      <DetailsContainer visible={!!selectedExtra} top={650}>
+        <SeguimientoDetails
+          alumno={selectedExtra}
+          onClose={() => setSelectedExtra(null)}
+        />
+      </DetailsContainer>
+
+      {/* {selectedExtra ? (
         <SeguimientoDetails alumno={selectedExtra} onClose={() => setSelectedExtra(null)} />
 
       ) : (
-        <Table
-          id="seguimientosTable"
-          title="Seguimientos"
-          columns={columnsSeguimientos}
-          data={seguimientos}
-          showCheckbox={true}
-          renderActions={
-            (row) => (
-              <ActionButtons
-                row={row}
-                setSelectedUser={setSelectedExtra}
-                onDelete={() => handleDelete(row, () => obtenerSeguimientos(setSeguimientos))
-                }
-                actions={["view", "delete"]}
-              />
-            )}
-          headerButtons={(row) => (
-            <TableButtons
-              row={row}
-              actions={["delete", "excel"]}
-              onActions={tableHandlers}
-            />
-          )}
-          onSelectionChange={(ids) => setDeleteCheck(ids)}
-        />
-      )}
+        <
+      )} */}
 
     </Layout>
   );
