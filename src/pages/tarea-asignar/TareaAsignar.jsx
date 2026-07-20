@@ -286,7 +286,6 @@ export default function TareaAsignar() {
                           theme="snow"
                           className="editor-tarea"
                           modules={modules}
-                          formats={formats}
                           value={formData.instrucciones}
                           onChange={(value) =>
                             setFormData((prev) => ({

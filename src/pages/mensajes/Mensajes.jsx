@@ -7,9 +7,11 @@ import TableButtons from "../../components/TableButtons";
 import Filter from "../../components/Filter";
 import {
   obtenerMensajes,
+  obtenerMensajesExcel,
   handleSaveMensaje,
   handleDelete
 } from "../../functions/MensajeActions";
+import { exportarExcel } from "../../functions/general/ExportarExcel";
 import { filtrarTabla } from "../../functions/general/Functions";
 import { obtenerTipoMensajes } from "../../functions/MensajeTipoActions";
 import { obtenerNiveles } from "../../functions/NivelesActions";
@@ -25,6 +27,7 @@ import DetailsContainer from "../../functions/general/DetailsContainer";
 export default function Mensaje() {
   const [mensajes, setMensajes] = useState([]);
   const [mensajesOriginal, setMensajesOriginal] = useState([]);
+  const [mensajesExcel, setMensajesExcel] = useState([]);
   const [mensajesTipo, setMensajesTipo] = useState([]);
   const [niveles, setNiveles] = useState([]);
   const [grados, setGrados] = useState([]);
@@ -71,6 +74,7 @@ export default function Mensaje() {
       setMensajesOriginal(res);
       setMensajes(res);
     });
+    obtenerMensajesExcel(setMensajesExcel);
     obtenerNiveles(setNiveles);
     obtenerTipoMensajes(setMensajesTipo);
     obtenerAlumnos(setAlumnos);
@@ -124,7 +128,26 @@ export default function Mensaje() {
   }, []);*/
 
   const handleSubmit = async (formData) => {
-    return await handleSaveMensaje(formData);
+    const guardado = await handleSaveMensaje(formData);
+
+    if (guardado) {
+      obtenerMensajes((res) => {
+        setMensajesOriginal(res);
+        setMensajes(res);
+      });
+      obtenerMensajesExcel(setMensajesExcel);
+    }
+
+    return guardado;
+  };
+
+  const botonExcel = () => {
+    const encabezados = ["Receptor", "Envio", "NumDestinatario", "Asunto", "Fecha"];
+    exportarExcel("Mensajes", encabezados, mensajesExcel);
+  };
+
+  const tableHandlers = {
+    excel: botonExcel,
   };
 
   return (
@@ -181,7 +204,11 @@ export default function Mensaje() {
                 />
               )}
               headerButtons={(row) => (
-                <TableButtons row={row} actions={["delete", "excel"]} />
+                <TableButtons
+                  row={row}
+                  actions={["delete", "excel"]}
+                  onActions={tableHandlers}
+                />
               )}
             />
 

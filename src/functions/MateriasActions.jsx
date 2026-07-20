@@ -117,36 +117,40 @@ export const handleSaveAsignacion = async (
   setEditingAsignarMaterias,
   obtenerMateriasAsignadas,
 ) => {
-  const sid_instituto = localStorage.getItem("sid_instituto");
-  const fecha = fechaFormateada();
-  console.log("Valores del formulario:", values);
+  try {
+    const sid_instituto = localStorage.getItem("sid_instituto");
+    const fecha = fechaFormateada();
+    console.log("Valores del formulario:", values);
 
-  const payload = {
-    id_asignar_materia: editingAsignarMaterias
-      ? editingAsignarMaterias.id_asignar_materia
-      : null,
-    sid_materia: values.materia,
-    sid_profesor: values.profesor,
-    sid_nivel: values.Nivel,
-    sid_grado: values.Grado,
-    sid_grupo: values.Grupo,
-    sid_usuario: sid_instituto,
-    fecha_creacion: Date.now(),
-  };
+    const payload = {
+      id_asignar_materia: editingAsignarMaterias
+        ? editingAsignarMaterias.id_asignar_materia
+        : null,
+      sid_materia: values.materia,
+      sid_profesor: values.profesor,
+      sid_nivel: values.Nivel,
+      sid_grado: values.Grado,
+      sid_grupo: values.Grupo,
+      sid_usuario: sid_instituto,
+      fecha_creacion: Date.now(),
+    };
 
-  if (editingAsignarMaterias) {
-    await InstitutoDataUpdate(
-      `asignar_materia/${editingAsignarMaterias.id_asignar_materia}`,
-      payload,
-    );
-    showAlert("success", "Materia actualizada correctamente");
-    setEditingAsignarMaterias(null);
-  } else {
-    await InstitutoDataAdd("asignar_materia", payload);
-    showAlert("success", "Materia agregada correctamente");
+    if (editingAsignarMaterias) {
+      await InstitutoDataUpdate(
+        `asignar_materia/${editingAsignarMaterias.id_asignar_materia}`,
+        payload,
+      );
+      showAlert("success", "Materia actualizada correctamente");
+      setEditingAsignarMaterias(null);
+    } else {
+      await InstitutoDataAdd("asignar_materia", payload);
+      showAlert("success", "Materia agregada correctamente");
+    }
+
+    await obtenerMateriasAsignadas();
+  } catch (error) {
+    showAlert("error", error.message || "Error al guardar la asignación de materia");
   }
-
-  await obtenerMateriasAsignadas();
 };
 
 export const obtenerDetalleAsignacion = async (

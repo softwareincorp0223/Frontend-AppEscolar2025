@@ -31,6 +31,24 @@ export const obtenerMensajes = async (setMensajes) => {
   }
 };
 
+export const obtenerMensajesExcel = async (setMensajesExcel) => {
+  try {
+    const mensajesApi = await InstitutoData("vista-mensajes/excel/");
+
+    const formateados = mensajesApi.map((data) => ({
+      Receptor: mapReceptor(data.receptor),
+      Envio: data.nombre_tipo || "",
+      NumDestinatario: data.destinatarios || "",
+      Asunto: data.asunto || "",
+      Fecha: fechaFormateada(data?.fecha_envio, { paraUI: true }) ?? "Sin fecha",
+    }));
+
+    setMensajesExcel(formateados);
+  } catch (error) {
+    showAlert("error", "Error al obtener Mensajes para Excel");
+  }
+};
+
 export const obtenerMensaje = async (mensaje_id, setMensaje) => {
   try {
     const mensajesApi = await InstitutoDataFilter(
