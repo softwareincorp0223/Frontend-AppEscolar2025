@@ -9,6 +9,7 @@ import { isAuthenticated } from "../functions/general/Auth";
 import Aside from "./Aside";
 import Header from "./Header";
 import Footer from "./Footer";
+import PermissionGuard from "../functions/permissions/PermissionGuard";
 
 import "../index.css";
 
@@ -64,7 +65,9 @@ export default function Layout({ children }) {
         <div className="container-fluid mt-3 px-3">
           <div className="row">
             <div className="col-12 col-md-12 col-lg-12 mx-auto">
-              <main>{children}</main>
+              <main>
+                <PermissionGuard>{children}</PermissionGuard>
+              </main>
             </div>
           </div>
         </div>

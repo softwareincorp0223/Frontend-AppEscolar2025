@@ -12,31 +12,21 @@ export const obtenerGrupos = async (setGrupos) => {
   try {
     const sid_instituto = localStorage.getItem("sid_instituto");
 
-    const where = encodeURIComponent(
-      JSON.stringify({
-        Nivel: { sid_instituto }
-      })
-    );
-
-    // NO MANDAR sid_instituto extra
     const gruposApi = await InstitutoDataFilter(
-      `grupo?include=Grado,Nivel&where=${where}`
+      `vistagradogrupo?sid_instituto=${sid_instituto}`
     );
 
     const formateados = gruposApi.map(g => ({
       ...g,
-      nombreGrado: g.Grado?.nombre || "Sin grado",
-      nombreNivel: g.Grado?.Nivel?.nombre || "Sin nivel"
+      nombreGrado: g.nombre_grado || "Sin grado",
+      nombreNivel: g.nombre_nivel || "Sin nivel"
     }));
-
 
     setGrupos(formateados);
   } catch (error) {
     showAlert("error", "Error al obtener grados");
   }
 };
-
-
 
 export const handleDeleteGrupos = async (row, obtenerGrupos) => {
   const result = await showAlert("delete", "¿Deseas eliminar este grupo?");
@@ -69,10 +59,6 @@ export const handleSaveGrupos = async (values, editingGrupo, setEditingGrupo, ob
 
 export const obtenerGruposPorGrados = async (sig_grado, setGrados) => {
   try {
-    //MAS SIMPLE
-    //const where = encodeURIComponent(JSON.stringify({ sid_nivel }));
-    //const data = await InstitutoDataFilter(`grado?where=${where}`);
-    //http://localhost:4000/api/grado?sid_nivel=cgalr
     const data = await InstitutoDataFilter(`grupo?sid_grado=${sig_grado}`);
 
     setGrados(data);

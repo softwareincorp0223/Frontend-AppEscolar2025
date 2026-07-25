@@ -34,3 +34,23 @@ export const obtenerAsistencias = async (setUsuarios) => {
   }
 };
 
+export const obtenerAsistenciasExcel = async (setAsistenciasExcel) => {
+  try {
+    const asistenciasApi = await InstitutoData("vistaasistencia/excel/");
+
+    const formateados = asistenciasApi.map((a) => ({
+      Nombre: `${a.nombre_alumno || ""} ${a.apellido_alumno || ""}`.trim(),
+      Nivel: a.nombre_nivel || "",
+      Grado: a.nombre_grado || "",
+      Grupo: a.nombre_grupo || "",
+      FechaHora: fechaFormateada(a.fecha_ingreso, { paraUI: true }) || "",
+      Tipo: a.tipo || "",
+      RegistradoPor: `${a.nombre_usuario || ""} ${a.apellido_usuario || ""}`.trim(),
+    }));
+
+    setAsistenciasExcel(formateados);
+  } catch (error) {
+    console.error(error);
+    showAlert("error", "Error al obtener asistencias para Excel");
+  }
+};

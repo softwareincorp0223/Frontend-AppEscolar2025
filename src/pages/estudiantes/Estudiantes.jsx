@@ -9,6 +9,7 @@ import {
   handleSaveAlumnos,
   handleDeleteVarios,
   handleDelete,
+  descargarQRsAlumnos,
 } from "../../functions/EstudiantesActions";
 import { filtrarTabla } from "../../functions/general/Functions";
 import EstudianteDetails from "../../components/details/EstudiantesDetails";
@@ -114,6 +115,7 @@ export default function Estudiantes() {
   const tableHandlers = {
     delete: deleteVarios,
     excel: botonExcel,
+    qr_code: descargarQRsAlumnos,
   };
 
   /* =========================
@@ -269,7 +271,7 @@ export default function Estudiantes() {
           headerButtons={(row) => (
             <TableButtons
               row={row}
-              actions={["delete", "excel"]}
+              actions={["delete", "excel", "qr_code"]}
               onActions={tableHandlers}
             />
           )}

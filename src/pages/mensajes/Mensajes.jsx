@@ -1,16 +1,18 @@
 import React, { useState, useEffect, useMemo } from "react";
 import Layout from "../../components/Layout";
 import Table from "../../components/Table";
-import { CKEditor } from "@ckeditor/ckeditor5-react";
-import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
 import $ from "jquery";
 import ActionButtons from "../../components/ActionButtons";
 import TableButtons from "../../components/TableButtons";
 import Filter from "../../components/Filter";
 import {
   obtenerMensajes,
+  obtenerMensajesExcel,
   handleSaveMensaje,
+  handleDeleteVarios,
+  handleDelete
 } from "../../functions/MensajeActions";
+import { exportarExcel } from "../../functions/general/ExportarExcel";
 import { filtrarTabla } from "../../functions/general/Functions";
 import { obtenerTipoMensajes } from "../../functions/MensajeTipoActions";
 import { obtenerNiveles } from "../../functions/NivelesActions";
@@ -26,6 +28,7 @@ import Modal from "../../components/Modal";
 export default function Mensaje() {
   const [mensajes, setMensajes] = useState([]);
   const [mensajesOriginal, setMensajesOriginal] = useState([]);
+  const [mensajesExcel, setMensajesExcel] = useState([]);
   const [mensajesTipo, setMensajesTipo] = useState([]);
   const [niveles, setNiveles] = useState([]);
   const [grados, setGrados] = useState([]);
@@ -33,6 +36,7 @@ export default function Mensaje() {
   const [alumnos, setAlumnos] = useState([]);
   const [extracurriculares, setExtracurriculares] = useState([]);
   const [selectedMensaje, setSelectedMensaje] = useState(null);
+  const [deleteCheck, setDeleteCheck] = useState([]);
 
   const [nivelSeleccionado, setNivelSeleccionado] = useState(null);
   const [gradoSeleccionado, setGradoSeleccionado] = useState(null);
@@ -72,11 +76,11 @@ export default function Mensaje() {
       setMensajesOriginal(res);
       setMensajes(res);
     });
+    obtenerMensajesExcel(setMensajesExcel);
     obtenerNiveles(setNiveles);
     obtenerTipoMensajes(setMensajesTipo);
     obtenerAlumnos(setAlumnos);
     obtenerExtracurricular(setExtracurriculares);
-    console.log(selectedMensaje);
   }, []);
 
   useEffect(() => {
@@ -111,22 +115,32 @@ export default function Mensaje() {
     { label: "Fecha", key: "fecha_de_envio" },
   ];
 
-  /*useEffect(() => {
-    //  Inicializar solo si no está ya inicializada
-    if (!$.fn.DataTable.isDataTable("#mensajesTable")) {
-      $("#mensajesTable").DataTable();
+  const handleSubmit = async (formData) => {
+    const guardado = await handleSaveMensaje(formData);
+
+    if (guardado) {
+      obtenerMensajes((res) => {
+        setMensajesOriginal(res);
+        setMensajes(res);
+      });
+      obtenerMensajesExcel(setMensajesExcel);
     }
 
-    return () => {
-      //  Destruir solo al desmontar el componente
-      if ($.fn.DataTable.isDataTable("#mensajesTable")) {
-        $("#mensajesTable").DataTable().destroy();
-      }
-    };
-  }, []);*/
+    return guardado;
+  };
 
-  const handleSubmit = (formData) => {
-    handleSaveMensaje(formData);
+  const botonExcel = () => {
+    const encabezados = ["Receptor", "Envio", "NumDestinatario", "Asunto", "Fecha"];
+    exportarExcel("Mensajes", encabezados, mensajesExcel);
+  };
+
+  const deleteVarios = () => {
+    handleDeleteVarios(deleteCheck, setMensajes);
+  };
+
+  const tableHandlers = {
+    delete: deleteVarios,
+    excel: botonExcel,
   };
 
   return (
@@ -175,13 +189,21 @@ export default function Mensaje() {
               renderActions={(row) => (
                 <ActionButtons
                   row={row}
+                  onDelete={() =>
+                    handleDelete(row, () => obtenerMensajes(setMensajes))
+                  }
                   actions={["view", "delete"]}
                   setSelectedUser={setSelectedMensaje}
                 />
               )}
               headerButtons={(row) => (
-                <TableButtons row={row} actions={["delete", "excel"]} />
+                <TableButtons
+                  row={row}
+                  actions={["delete", "excel"]}
+                  onActions={tableHandlers}
+                />
               )}
+              onSelectionChange={(ids) => setDeleteCheck(ids)}
             />
 
             <Modal

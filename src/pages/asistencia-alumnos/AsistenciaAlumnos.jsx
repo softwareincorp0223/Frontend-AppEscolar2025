@@ -5,7 +5,8 @@ import TableButtons from "../../components/TableButtons";
 import ActionButtons from "../../components/ActionButtons";
 import Filter from "../../components/Filter";
 import { filtrarTabla } from "../../functions/general/Functions";
-import { obtenerAlumnos } from "../../functions/EstudiantesActions";
+import { obtenerAlumnos, descargarQRsAlumnos } from "../../functions/EstudiantesActions";
+import { descargarQR } from "../../functions/general/Functions";
 
 export default function AsistenciaAlumnos() {
   const [alumnos, setAlumnos] = useState([]);
@@ -35,6 +36,10 @@ export default function AsistenciaAlumnos() {
     { label: "Grupo", key: "Grupo" },
   ];
 
+  const tableHandlers = {
+    qr_code: descargarQRsAlumnos,
+  };
+
   return (
     <Layout>
       <div className="container mt-2"></div>
@@ -60,10 +65,25 @@ export default function AsistenciaAlumnos() {
               columns={columns}
               data={alumnos}
               renderActions={(row) => (
-                <ActionButtons row={row} actions={["qr"]} />
+                <ActionButtons
+                  row={row}
+                  actions={[
+                    {
+                      label: "Descargar QR",
+                      icon: "qr_code",
+                      className: "btn-outline-dark",
+                      onClick: (row) =>
+                        descargarQR(row.id_alumno, row.codigo_qr),
+                    },
+                  ]}
+                />
               )}
               headerButtons={(row) => (
-                <TableButtons row={row} actions={["qr_code"]} />
+                <TableButtons
+                  row={row}
+                  actions={["qr_code"]}
+                  onActions={tableHandlers}
+                />
               )}
             />
           </div>

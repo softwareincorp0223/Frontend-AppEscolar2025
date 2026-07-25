@@ -5,14 +5,19 @@ import TableButtons from "../../components/TableButtons";
 import ActionButtons from "../../components/ActionButtons";
 import Filter from "../../components/Filter";
 import { filtrarTabla } from "../../functions/general/Functions";
-import { obtenerTareas } from "../../functions/TeareasActions";
+import { handleDelete, handleDeleteVarios, obtenerTareas } from "../../functions/TeareasActions";
 import { obtenerNiveles } from "../../functions/NivelesActions";
 import { obtenerGradosPorNivel } from "../../functions/GradosActions";
 import { obtenerGruposPorGrados } from "../../functions/GruposActions";
+import { exportarExcel } from "../../functions/general/ExportarExcel";
+import TareasDetails from "../../components/details/TareasDetails";
+import DetailsContainer from "../../functions/general/DetailsContainer";
 
 export default function Tareas() {
   const [tareas, setTareas] = useState([]);
   const [tareasOriginal, setTareasOriginal] = useState([]);
+  const [deleteCheck, setDeleteCheck] = useState([]);
+  const [selectedTarea, setSelectedTarea] = useState(null);
 
   const [niveles, setNiveles] = useState([]);
   const [grados, setGrados] = useState([]);
@@ -76,6 +81,29 @@ export default function Tareas() {
     { label: "Profesor", key: "profesor" },
   ];
 
+  const deleteVarios = () => {
+    handleDeleteVarios(deleteCheck, setTareas);
+  };
+
+  const botonExcel = () => {
+    const encabezados = ["Nivel", "Grado", "Grupo", "Creado", "Materia", "Profesor"];
+    const tareasExcel = tareas.map((tarea) => ({
+      Nivel: tarea.nivel,
+      Grado: tarea.grado,
+      Grupo: tarea.grupo,
+      Creado: tarea.creada,
+      Materia: tarea.materia,
+      Profesor: tarea.profesor,
+    }));
+
+    exportarExcel("Tareas", encabezados, tareasExcel);
+  };
+
+  const tableHandlers = {
+    delete: deleteVarios,
+    excel: botonExcel,
+  };
+
   return (
     <Layout>
       <div className="container mt-2"></div>
@@ -99,13 +127,33 @@ export default function Tareas() {
               title="Tareas"
               columns={columns}
               data={tareas}
+              showCheckbox={true}
               renderActions={(row) => (
-                <ActionButtons row={row} actions={["view", , "delete"]} />
+                <ActionButtons
+                  row={row}
+                  setSelectedUser={setSelectedTarea}
+                  actions={["view", "delete"]}
+                  onDelete={() =>
+                    handleDelete(row, () => obtenerTareas(setTareas))
+                  }
+                />
               )}
               headerButtons={(row) => (
-                <TableButtons row={row} actions={["excel"]} />
+                <TableButtons
+                  row={row}
+                  actions={["delete", "excel"]}
+                  onActions={tableHandlers}
+                />
               )}
+              onSelectionChange={(ids) => setDeleteCheck(ids)}
             />
+
+            <DetailsContainer visible={!!selectedTarea} top={650}>
+              <TareasDetails
+                tarea={selectedTarea}
+                onClose={() => setSelectedTarea(null)}
+              />
+            </DetailsContainer>
           </div>
         </div>
       </div>

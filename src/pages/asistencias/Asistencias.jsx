@@ -4,11 +4,13 @@ import Table from "../../components/Table";
 import TableButtons from "../../components/TableButtons";
 import Filter from "../../components/Filter";
 import { filtrarTabla } from "../../functions/general/Functions";
-import { obtenerAsistencias } from "../../functions/AsistenciasActions";
+import { obtenerAsistencias, obtenerAsistenciasExcel } from "../../functions/AsistenciasActions";
+import { exportarExcel } from "../../functions/general/ExportarExcel";
 
 export default function Asistencias() {
   const [asistencias, setAsistencias] = useState([]);
   const [asistenciasOriginal, setAsistenciasOriginal] = useState([]);
+  const [asistenciasExcel, setAsistenciasExcel] = useState([]);
 
   const manejarCambioFiltros = (f) => {
     const resultado = filtrarTabla({
@@ -24,7 +26,17 @@ export default function Asistencias() {
       setAsistenciasOriginal(res);
       setAsistencias(res);
     });
+    obtenerAsistenciasExcel(setAsistenciasExcel);
   }, []);
+
+  const botonExcel = () => {
+    const encabezados = ["Nombre", "Nivel", "Grado", "Grupo", "FechaHora", "Tipo", "RegistradoPor"];
+    exportarExcel("Asistencias", encabezados, asistenciasExcel);
+  };
+
+  const tableHandlers = {
+    excel: botonExcel,
+  };
 
   const columns = [
     { label: "Nombre", key: "estudiante" },
@@ -83,6 +95,7 @@ export default function Asistencias() {
                   actions={[
                     "excel", // usa botón predefinido
                   ]}
+                  onActions={tableHandlers}
                 />
               )}
             />

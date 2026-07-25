@@ -1,25 +1,29 @@
 import React, { useState, useEffect } from "react";
 import { fechaFormateada } from "../../functions/general/Functions";
-import { obtenerMensaje, obtenerAlumnosMensaje } from "../../functions/MensajeActions";
+import {
+  obtenerMensaje,
+  obtenerAlumnosMensaje,
+} from "../../functions/MensajeActions";
 import MensajesAlumnosTable from "../tables/MensajesAlumnosTable";
 import Loader from "../../functions/general/Loader";
 
 export default function MensajeDetails({ mensaje, onClose }) {
   const [mensajeIndividual, setMensaje] = useState(null);
   const [alumnos, setAlumnos] = useState([]);
-  const [loadingAlumnos, setLoadingAlumnos] = useState(true); 
+  const [loadingAlumnos, setLoadingAlumnos] = useState(true);
 
   useEffect(() => {
     obtenerMensaje(mensaje.id_mensaje, setMensaje);
 
-    setLoadingAlumnos(true); 
+    setLoadingAlumnos(true);
+
     obtenerAlumnosMensaje(mensaje.id_mensaje, (data) => {
-      console.log(data);
-      
       setAlumnos(data);
-      setLoadingAlumnos(false); 
+      setLoadingAlumnos(false);
     });
   }, []);
+
+  console.log(mensajeIndividual);
 
   return (
     <div
@@ -152,7 +156,7 @@ export default function MensajeDetails({ mensaje, onClose }) {
                       </small>
 
                       <span className="fw-semibold">
-                        {mensajeIndividual?.mensaje_programado || "No"}
+                        {mensajeIndividual?.mensaje_programado ? "Sí" : "No"}
                       </span>
                     </div>
 
@@ -196,7 +200,7 @@ export default function MensajeDetails({ mensaje, onClose }) {
                   </small>
 
                   <span className="fw-semibold">
-                    {mensajeIndividual?.respuesta_rapida || "No"}
+                    {mensajeIndividual?.respuesta_rapida ? "Sí" : "No"}
                   </span>
                 </div>
               </div>
@@ -213,7 +217,7 @@ export default function MensajeDetails({ mensaje, onClose }) {
                       <small className="text-muted d-block">Repetir</small>
 
                       <span className="fw-semibold">
-                        {mensajeIndividual?.repetir || "No"}
+                        {mensajeIndividual?.repetir ? "Sí" : "No"}
                       </span>
                     </div>
 
@@ -258,19 +262,19 @@ export default function MensajeDetails({ mensaje, onClose }) {
                     <small className="text-muted d-block mb-2">URLs</small>
 
                     <ul className="list-group list-group-flush">
-                      {(mensajeIndividual?.urls || []).length > 0 ? (
-                        mensajeIndividual.urls.map((url, index) => (
+                      {mensajeIndividual?.urls?.length > 0 ? (
+                        mensajeIndividual.urls.map((item, index) => (
                           <li
-                            key={index}
+                            key={item.id_url || index}
                             className="list-group-item bg-transparent px-0"
                           >
                             <a
-                              href={url}
+                              href={item.url}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-decoration-none"
                             >
-                              {url}
+                              {item.url}
                             </a>
                           </li>
                         ))
@@ -287,17 +291,23 @@ export default function MensajeDetails({ mensaje, onClose }) {
                     <small className="text-muted d-block mb-2">Archivos</small>
 
                     <ul className="list-group list-group-flush">
-                      {(mensajeIndividual?.archivos || []).length > 0 ? (
-                        mensajeIndividual.archivos.map((archivo, index) => (
+                      {mensajeIndividual?.archivos?.length > 0 ? (
+                        mensajeIndividual.archivos.map((item, index) => (
                           <li
-                            key={index}
+                            key={item.id_archivo_mensaje || index}
                             className="list-group-item bg-transparent px-0"
                           >
                             <i className="material-icons align-middle me-2">
                               attach_file
                             </i>
-
-                            {archivo}
+                            <a
+                              href={item.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-decoration-none"
+                            >
+                              {item.url}
+                            </a>
                           </li>
                         ))
                       ) : (
@@ -310,11 +320,10 @@ export default function MensajeDetails({ mensaje, onClose }) {
                 </div>
               </div>
             </div>
-
           </div>
         </div>
       </div>
-      
+
       <div className="row">
         <h6 className="fw-bold mb-2">Alumnos</h6>
         {loadingAlumnos ? ( // 👈
@@ -323,7 +332,6 @@ export default function MensajeDetails({ mensaje, onClose }) {
           <MensajesAlumnosTable data={alumnos} />
         )}
       </div>
-
     </div>
   );
 }

@@ -1,3 +1,5 @@
+import QRCode from "qrcode";
+
 //ya no se usa
 export const filtrarDatos = (filtros, dataOriginal) => {
   let filtrado = dataOriginal;
@@ -235,13 +237,26 @@ export function filtrarTabla({ filtros, dataOriginal }) {
   return resultado;
 }
 
-export function descargarQR() {
-  const canvas = document.querySelector("canvas");
-  if (!canvas) return;
+
+export async function descargarQR(id, codigo = "") {
+  console.log(id, codigo);
+  
+  if (!codigo) {
+    const canvas = document.querySelector("canvas");
+    if (!canvas) return;
+
+    const link = document.createElement("a");
+    link.href = canvas.toDataURL("image/png");
+    link.download = `QR_${id}.png`;
+    link.click();
+    return;
+  }
+
+  const dataUrl = await QRCode.toDataURL(codigo);
 
   const link = document.createElement("a");
-  link.href = canvas.toDataURL("image/png");
-  link.download = `QR_${padre.id_padre}.png`;
+  link.href = dataUrl;
+  link.download = `QR_${id}.png`;
   link.click();
 }
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Layout from "../../components/Layout";
-import { CKEditor } from "@ckeditor/ckeditor5-react";
-import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
+import ReactQuill from "react-quill-new";
+import "quill/dist/quill.snow.css";
 import "material-icons/iconfont/material-icons.css";
 import { obtenerNiveles } from "../../functions/NivelesActions";
 import { obtenerGradosPorNivel } from "../../functions/GradosActions";
@@ -19,6 +19,15 @@ export default function TareaAsignar() {
     archivos: [null], // empieza con un campo
     urls: [""],
   });
+  const initialFormData = {
+    nivel_tarea: "0",
+    grado_tarea: "0",
+    grupo_tarea: "0",
+    materia_tarea: "0",
+    instrucciones: "",
+    archivos: [null],
+    urls: [""],
+  };
   const [niveles, setNiveles] = useState([]);
   const [grados, setGrados] = useState([]);
   const [grupos, setGrupos] = useState([]);
@@ -27,6 +36,20 @@ export default function TareaAsignar() {
   const [gradoSeleccionado, setGradoSeleccionado] = useState(null);
   const [materias, setMaterias] = useState([]);
   const [grupoSeleccionado, setGrupoSeleccionado] = useState(null);
+  const [fileKey, setFileKey] = useState(0);
+
+  const modules = {
+    toolbar: [
+      [{ header: [1, 2, 3, false] }],
+      ["bold", "italic", "underline", "strike"],
+      [{ color: [] }, { background: [] }],
+      [{ list: "ordered" }, { list: "bullet" }],
+      [{ indent: "-1" }, { indent: "+1" }],
+      [{ align: [] }],
+      ["link", "image"],
+      ["clean"],
+    ],
+  };
 
   /*nivel grado grupo */
   useEffect(() => {
@@ -110,9 +133,20 @@ export default function TareaAsignar() {
     setFormData({ ...formData, archivos: newArchivos });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    handleSaveTarea(formData);
+    const guardado = await handleSaveTarea(formData);
+
+    if (guardado) {
+      setFormData(initialFormData);
+      setGrados([]);
+      setGrupos([]);
+      setMaterias([]);
+      setNivelSeleccionado(null);
+      setGradoSeleccionado(null);
+      setGrupoSeleccionado(null);
+      setFileKey((prev) => prev + 1);
+    }
   };
 
   useEffect(() => {
@@ -269,24 +303,20 @@ export default function TareaAsignar() {
                       {/* Instrucciones */}
                       <div className="mt-3">
                         <label>Instrucciones de la tarea</label>
-                        <CKEditor
-                          editor={ClassicEditor}
-                          data={formData.instrucciones}
-                          config={{
-                            placeholder: "Escribe aquí las instrucciones...",
-                          }}
-                          onChange={(event, editor) => {
-                            const data = editor.getData();
-                            setFormData({ ...formData, instrucciones: data });
-                          }}
-                          onReady={(editor) => {
-                            editor.editing.view.change((writer) => {
-                              writer.setStyle(
-                                "min-height",
-                                "150px",
-                                editor.editing.view.document.getRoot(),
-                              );
-                            });
+                        <ReactQuill
+                          theme="snow"
+                          className="editor-tarea"
+                          modules={modules}
+                          value={formData.instrucciones}
+                          onChange={(value) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              instrucciones: value,
+                            }))
+                          }
+                          style={{
+                            height: "280px",
+                            marginBottom: "55px",
                           }}
                         />
                       </div>
@@ -299,6 +329,7 @@ export default function TareaAsignar() {
                           key={index}
                         >
                           <input
+                            key={`${fileKey}-${index}`}
                             type="file"
                             className="form-control me-2"
                             onChange={(e) =>

@@ -18,7 +18,7 @@ export default function App() {
 
     try {
       await login(email, password);
-      window.location.href = "/src/pages/usuarios/index.html"; // redirige al dashboard
+      window.location.href = "/src/pages/estadisticas/index.html"; // redirige al dashboard
     } catch (err) {
       setError(err.message || "Error al iniciar sesión");
     } finally {

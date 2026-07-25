@@ -1,24 +1,32 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState, type JSX } from "react";
 import logo from "../../src/assets/logo_app_escolar.png";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { menuItems } from "./getCurrentPage";
+import { hasPermission } from "../functions/permissions/PermissionGuard";
 
-type MenuItem = {
-  label: string;
-  icon: string;
-  link?: string;
-  children?: { label: string; link: string }[];
-};
 
 export default function Aside(): JSX.Element {
   const currentPath = window.location.pathname; // ruta actual
 
   const [openSubmenu, setOpenSubmenu] = useState<number | null>(null);
+  const visibleMenuItems = useMemo(
+    () =>
+      menuItems
+        .map((item) => {
+          if (!item.children) return hasPermission(item.permission) ? item : null;
 
-  
+          const children = item.children.filter((child) =>
+            hasPermission(child.permission)
+          );
+
+          return children.length > 0 ? { ...item, children } : null;
+        })
+        .filter((item): item is NonNullable<typeof item> => Boolean(item)),
+    []
+  );
 
   useEffect(() => {
-    menuItems.forEach((item, index) => {
+    visibleMenuItems.forEach((item, index) => {
       if (item.children) {
         const hasActiveChild = item.children.some(
           (child) => child.link === currentPath
@@ -29,7 +37,7 @@ export default function Aside(): JSX.Element {
         }
       }
     });
-  }, [currentPath]);
+  }, [currentPath, visibleMenuItems]);
 
   const isActive = (link?: string) => (link ? currentPath === link : false);
 
@@ -45,7 +53,7 @@ export default function Aside(): JSX.Element {
       </div>
 
       <nav className="nav flex-column flex-grow-1">
-        {menuItems.map((item, index) =>
+        {visibleMenuItems.map((item, index) =>
           item.children ? (
             <React.Fragment key={index}>
               <button

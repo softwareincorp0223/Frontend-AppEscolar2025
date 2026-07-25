@@ -4,12 +4,20 @@ import { InstitutoData } from "./general/DataActions";
 const DEFAULT_STATS = {
   totalMensajesMes: 0,
   totalProfesores: 0,
+  totalPadres: 0,
+  totalUsuarios: 0,
   totalAlumnos: 0,
+  totalNiveles: 0,
+  totalGrados: 0,
+  totalGrupos: 0,
   totalTareasMes: 0,
+  totalTareasSemana: 0,
   totalEventosProximos: 0,
+  totalEventosHoy: 0,
   variacionMensajesMes: 0,
   mensajesPorDia: [],
   actividadSemanal: [],
+  alumnosPorNivel: [],
   eventosProximos: [],
   actividadReciente: [],
 };
@@ -81,6 +89,7 @@ export const obtenerEstadisticas = async (setEstadisticas) => {
       ...estadisticasApi,
       mensajesPorDia: estadisticasApi.mensajesPorDia || [],
       actividadSemanal: estadisticasApi.actividadSemanal || [],
+      alumnosPorNivel: estadisticasApi.alumnosPorNivel || [],
       eventosProximos: normalizarEventos(estadisticasApi.eventosProximos || []),
       actividadReciente: normalizarActividad(
         estadisticasApi.actividadReciente || [],

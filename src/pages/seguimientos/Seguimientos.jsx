@@ -40,11 +40,15 @@ export default function Seguimientos() {
     exportarExcel("AsignarAtributo", encabezados, asignarAtributoExcel);
   };
   console.log(asignarAtributoExcel);
+  
+  const subirDatos = () => {
+    window.location.href = "/src/pages/cargar-datos/index.html"; // redirige al dashboard
+  };
 
   const tableHandlers = {
     excel: botonExcel,
     delete: deleteVarios,
-
+    datos: subirDatos,
   };
 
 
@@ -71,7 +75,7 @@ export default function Seguimientos() {
         headerButtons={(row) => (
           <TableButtons
             row={row}
-            actions={["delete", "excel"]}
+            actions={["delete", "excel", "datos"]}
             onActions={tableHandlers}
           />
         )}

@@ -26,6 +26,11 @@ export default function Niveles() {
   // selects
   const [nivelSeleccionado, setNivelSeleccionado] = useState(null);
 
+  const obtenerNivelIdDeGrupo = (grupo) => {
+    if (grupo?.Grado?.sid_nivel) return grupo.Grado.sid_nivel;
+    return niveles.find((nivel) => nivel.nombre === grupo?.nombreNivel)?.id_nivel || "";
+  };
+
   useEffect(() => {
     obtenerNiveles(setNiveles);
     obtenerGrados(setGrados);
@@ -44,7 +49,7 @@ export default function Niveles() {
   useEffect(() => {
     if (!editingGrupo) return;
 
-    const nivel = editingGrupo.Grado?.sid_nivel;
+    const nivel = obtenerNivelIdDeGrupo(editingGrupo);
 
     setNivelSeleccionado(nivel);
 
@@ -160,7 +165,7 @@ export default function Niveles() {
                     handleDelete(row, () => obtenerNiveles(setNiveles))
                   }
                   onEdit={() => setEditingNivel(row)}
-                  actions={["edit", "delete"]}
+                  actions={["edit"]}
                 />
               )}
             />
@@ -197,7 +202,7 @@ export default function Niveles() {
                     handleDeleteGrados(row, () => obtenerGrados(setGrados))
                   }
                   onEdit={() => setEditingGrado(row)}
-                  actions={["edit", "delete"]}
+                  actions={["edit"]}
                 />
               )}
             />
@@ -217,7 +222,7 @@ export default function Niveles() {
               initialValues={
                 editingGrupo
                   ? {
-                    Nivel: editingGrupo.Grado?.sid_nivel,
+                    Nivel: obtenerNivelIdDeGrupo(editingGrupo),
                     Grado: editingGrupo.sid_grado,
                     nombre: editingGrupo.nombre,
                   }
@@ -236,7 +241,7 @@ export default function Niveles() {
                     handleDeleteGrupos(row, () => obtenerGrupos(setGrupos))
                   }
                   onEdit={() => setEditingGrupo(row)}
-                  actions={["edit", "delete"]}
+                  actions={["edit"]}
                 />
               )}
             />
