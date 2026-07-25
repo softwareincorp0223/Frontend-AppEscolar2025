@@ -1,4 +1,5 @@
 import { showAlert } from "./general/Alerts";
+import Swal from "sweetalert2";
 import { fechaFormateada } from "./general/Functions";
 import {
   InstitutoData,
@@ -15,7 +16,7 @@ export const obtenerMensajes = async (setMensajes) => {
     const sid_instituto = localStorage.getItem("sid_instituto");
 
     const mensajesApi = await InstitutoDataFilter(
-      "vista-mensajes?sid_instituto=" + sid_instituto,
+      "vista-mensajes?sid_instituto=" + sid_instituto + "&eliminado=no",
     );
 
     const formateados = mensajesApi.map((data) => ({
@@ -40,7 +41,8 @@ export const obtenerMensajesExcel = async (setMensajesExcel) => {
       Envio: data.nombre_tipo || "",
       NumDestinatario: data.destinatarios || "",
       Asunto: data.asunto || "",
-      Fecha: fechaFormateada(data?.fecha_envio, { paraUI: true }) ?? "Sin fecha",
+      Fecha:
+        fechaFormateada(data?.fecha_envio, { paraUI: true }) ?? "Sin fecha",
     }));
 
     setMensajesExcel(formateados);
@@ -55,11 +57,24 @@ export const obtenerMensaje = async (mensaje_id, setMensaje) => {
       "mensaje?id_mensaje=" + mensaje_id,
     );
 
+    const alumnoUrls = await InstitutoDataFilter(
+      "url_mensaje?sid_mensaje=" + mensaje_id,
+    );
+
+    const alumnoArchivos = await InstitutoDataFilter(
+      "archivo_mensaje?sid_mensaje=" + mensaje_id,
+    );
+
     const formateados = mensajesApi.map((data) => ({
       ...data,
+      urls: alumnoUrls,
+      archivos: alumnoArchivos,
     }));
 
-    setMensaje(mensajesApi[0]);
+    console.log("formateados");
+    console.log(mensajesApi);
+
+    setMensaje(formateados[0] || null);
   } catch (error) {
     showAlert("error", "Error al obtener Mensajes");
   }
@@ -80,20 +95,67 @@ export const obtenerAlumnosMensaje = async (mensaje_id, setAlumnos) => {
 export const handleDelete = async (row, obtenerMensajes) => {
   const result = await showAlert("delete", "¿Deseas eliminar este mensaje?");
   if (!result.isConfirmed) return;
-  
-  //asignar_mensaje
-  await InstitutoDataDelete([row.id_mensaje], "asignar_mensaje", "sid_mensaje");
 
-  //archivo_mensaje
-  await InstitutoDataDelete([row.id_mensaje], "archivo_mensaje", "sid_mensaje");
+  const payload = {
+    id_mensaje: row.id_mensaje,
+    eliminado: "si",
+  };
 
-  //url_mensaje
-  await InstitutoDataDelete([row.id_mensaje], "url_mensaje", "sid_mensaje");
-
-  await InstitutoDataDelete(`mensaje/${row.id_mensaje}`);
+  const data = await InstitutoDataUpdate(`mensaje/${row.id_mensaje}`, payload);
 
   await obtenerMensajes(); // refrescar tabla
   showAlert("success", "Mensaje eliminado correctamente");
+};
+
+export const handleRestore = async (row, obtenerRegistroMensajes) => {
+  const result = await showAlert("warning", "¿Deseas restaurar este mensaje?");
+  if (!result.isConfirmed) return;
+
+  const payload = {
+    id_mensaje: row.id_mensaje,
+    eliminado: "no",
+  };
+
+  const data = await InstitutoDataUpdate(`mensaje/${row.id_mensaje}`, payload);
+  console.log(data);
+
+  await obtenerRegistroMensajes(); // refrescar tabla
+  showAlert("success", "Mensaje restaurado correctamente");
+};
+
+export const handleDeleteVarios = async (ids, setMensajes) => {
+  if (ids.length == 0) {
+    showAlert("error", "Selecciona los mensajes que deseas eliminar.");
+    return;
+  }
+
+  const result = await showAlert("delete", "¿Deseas eliminar varios mensajes?");
+  if (!result.isConfirmed) return;
+
+  Swal.fire({
+    title: "Eliminando mensajes",
+    text: "Por favor espera...",
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    didOpen: () => {
+      Swal.showLoading();
+    },
+  });
+
+  try {
+    await InstitutoDataDelete(ids, "asignar_mensaje", "sid_mensaje");
+    await InstitutoDataDelete(ids, "archivo_mensaje", "sid_mensaje");
+    await InstitutoDataDelete(ids, "url_mensaje", "sid_mensaje");
+    await InstitutoDataDelete(ids, "mensaje", "id_mensaje");
+
+    await obtenerMensajes(setMensajes);
+
+    Swal.close();
+    showAlert("success", "Mensajes eliminados correctamente");
+  } catch (error) {
+    Swal.close();
+    showAlert("error", "Error al eliminar los mensajes");
+  }
 };
 
 const asignarAlumnosMensaje = async (

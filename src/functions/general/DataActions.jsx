@@ -25,7 +25,8 @@ export async function InstitutoData(consulta) {
   } catch (error) {
     // Detectar si es un error de CORS o de credenciales
     if (error.response) {
-      throw new Error(error.response.data?.message || "Error en el servidor");
+      const data = error.response.data;
+      throw new Error(data?.details || data?.error || data?.message || "Error en el servidor");
     } else if (error.request) {
       throw new Error("Error de conexión con el servidor (CORS o red)");
     } else {
@@ -43,7 +44,14 @@ export async function InstitutoDataFilter(consulta) {
     return res.data;
   } catch (error) {
     if (error.response) {
-      throw new Error(error.response.data?.message || "Error en el servidor");
+      const data = error.response.data;
+      throw new Error(
+        (Array.isArray(data?.detalles) ? `${data?.error || "Faltan configuraciones"}:\n${data.detalles.join("\n")}` : "") ||
+        data?.details ||
+        data?.error ||
+        data?.message ||
+        "Error en el servidor"
+      );
     } else if (error.request) {
       throw new Error("Error de conexión con el servidor (CORS o red)");
     } else {
@@ -68,7 +76,14 @@ export async function InstitutoDataAdd(endpoint, data) {
     return res.data;
   } catch (error) {
     if (error.response) {
-      throw new Error(error.response.data?.message || "Error en el servidor");
+      const data = error.response.data;
+      throw new Error(
+        (Array.isArray(data?.detalles) ? `${data?.error || "Faltan configuraciones"}:\n${data.detalles.join("\n")}` : "") ||
+        data?.details ||
+        data?.error ||
+        data?.message ||
+        "Error en el servidor"
+      );
     } else if (error.request) {
       throw new Error("Error de conexión con el servidor (CORS o red)");
     } else {
@@ -136,7 +151,8 @@ export async function InstitutoDataDelete(endpointOrIds, endpoint, id_field) {
     return res.data;
   } catch (error) {
     if (error.response) {
-      throw new Error(error.response.data?.message || "Error en el servidor");
+      const data = error.response.data;
+      throw new Error(data?.details || data?.error || data?.message || "Error en el servidor");
     } else if (error.request) {
       throw new Error("Error de conexión con el servidor (CORS o red)");
     } else {

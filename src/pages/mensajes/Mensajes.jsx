@@ -9,6 +9,7 @@ import {
   obtenerMensajes,
   obtenerMensajesExcel,
   handleSaveMensaje,
+  handleDeleteVarios,
   handleDelete
 } from "../../functions/MensajeActions";
 import { exportarExcel } from "../../functions/general/ExportarExcel";
@@ -35,6 +36,7 @@ export default function Mensaje() {
   const [alumnos, setAlumnos] = useState([]);
   const [extracurriculares, setExtracurriculares] = useState([]);
   const [selectedMensaje, setSelectedMensaje] = useState(null);
+  const [deleteCheck, setDeleteCheck] = useState([]);
 
   const [nivelSeleccionado, setNivelSeleccionado] = useState(null);
   const [gradoSeleccionado, setGradoSeleccionado] = useState(null);
@@ -113,20 +115,6 @@ export default function Mensaje() {
     { label: "Fecha", key: "fecha_de_envio" },
   ];
 
-  /*useEffect(() => {
-    //  Inicializar solo si no está ya inicializada
-    if (!$.fn.DataTable.isDataTable("#mensajesTable")) {
-      $("#mensajesTable").DataTable();
-    }
-
-    return () => {
-      //  Destruir solo al desmontar el componente
-      if ($.fn.DataTable.isDataTable("#mensajesTable")) {
-        $("#mensajesTable").DataTable().destroy();
-      }
-    };
-  }, []);*/
-
   const handleSubmit = async (formData) => {
     const guardado = await handleSaveMensaje(formData);
 
@@ -146,7 +134,12 @@ export default function Mensaje() {
     exportarExcel("Mensajes", encabezados, mensajesExcel);
   };
 
+  const deleteVarios = () => {
+    handleDeleteVarios(deleteCheck, setMensajes);
+  };
+
   const tableHandlers = {
+    delete: deleteVarios,
     excel: botonExcel,
   };
 
@@ -210,6 +203,7 @@ export default function Mensaje() {
                   onActions={tableHandlers}
                 />
               )}
+              onSelectionChange={(ids) => setDeleteCheck(ids)}
             />
 
             <DetailsContainer visible={!!selectedMensaje} top={650}>

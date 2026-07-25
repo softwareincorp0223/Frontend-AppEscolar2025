@@ -61,6 +61,13 @@ export default function TableButtons({ actions = [], row, onActions = {} }) {
       label: "Pasar Ciclo",
       icon: "cached",
       className: "btn-outline-primary",
+      key: "ciclo",
+    },
+    regularizar: {
+      label: "Regularizar Escuela",
+      icon: "fact_check",
+      className: "btn-outline-success",
+      key: "regularizar",
     }
   };
 

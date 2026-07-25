@@ -19,6 +19,15 @@ export default function TareaAsignar() {
     archivos: [null], // empieza con un campo
     urls: [""],
   });
+  const initialFormData = {
+    nivel_tarea: "0",
+    grado_tarea: "0",
+    grupo_tarea: "0",
+    materia_tarea: "0",
+    instrucciones: "",
+    archivos: [null],
+    urls: [""],
+  };
   const [niveles, setNiveles] = useState([]);
   const [grados, setGrados] = useState([]);
   const [grupos, setGrupos] = useState([]);
@@ -27,6 +36,7 @@ export default function TareaAsignar() {
   const [gradoSeleccionado, setGradoSeleccionado] = useState(null);
   const [materias, setMaterias] = useState([]);
   const [grupoSeleccionado, setGrupoSeleccionado] = useState(null);
+  const [fileKey, setFileKey] = useState(0);
 
   const modules = {
     toolbar: [
@@ -123,9 +133,20 @@ export default function TareaAsignar() {
     setFormData({ ...formData, archivos: newArchivos });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    handleSaveTarea(formData);
+    const guardado = await handleSaveTarea(formData);
+
+    if (guardado) {
+      setFormData(initialFormData);
+      setGrados([]);
+      setGrupos([]);
+      setMaterias([]);
+      setNivelSeleccionado(null);
+      setGradoSeleccionado(null);
+      setGrupoSeleccionado(null);
+      setFileKey((prev) => prev + 1);
+    }
   };
 
   useEffect(() => {
@@ -308,6 +329,7 @@ export default function TareaAsignar() {
                           key={index}
                         >
                           <input
+                            key={`${fileKey}-${index}`}
                             type="file"
                             className="form-control me-2"
                             onChange={(e) =>

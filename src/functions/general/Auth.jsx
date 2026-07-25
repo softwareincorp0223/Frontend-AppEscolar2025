@@ -2,10 +2,21 @@
 import axios from "axios";
 
 const API_URL = "http://localhost:4000/api/auth/login"; // <-- ajusta tu endpoint real
+const AUTH_URL = "http://localhost:4000/api/auth";
 
 // Configurar axios globalmente
 axios.defaults.withCredentials = true; // si usas cookies
 axios.defaults.headers.common["Accept"] = "application/json";
+
+export function setAuthHeader(token = localStorage.getItem("token")) {
+  if (token) {
+    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+  } else {
+    delete axios.defaults.headers.common["Authorization"];
+  }
+}
+
+setAuthHeader();
 
 // Iniciar sesión
 export async function login(correo, contrasena) {
@@ -29,6 +40,7 @@ export async function login(correo, contrasena) {
     localStorage.setItem("user", JSON.stringify(usuario));
     localStorage.setItem("token", token);
     localStorage.setItem("sid_instituto", usuario.sid_instituto);
+    setAuthHeader(token);
 
     return res.data;
   } catch (error) {
@@ -48,6 +60,30 @@ export function getUser() {
   return user ? JSON.parse(user) : null;
 }
 
+export async function refreshUserPermissions() {
+  const token = localStorage.getItem("token");
+  const user = getUser();
+
+  if (!token || !user || user.tipo === "admin") return user;
+
+  setAuthHeader(token);
+
+  try {
+    const res = await axios.get(`${AUTH_URL}/me/permissions`);
+    const updatedUser = {
+      ...user,
+      sid_rol: res.data.sid_rol,
+      privilegios: res.data.privilegios || [],
+      permisos_configurados: !!res.data.permisos_configurados,
+    };
+
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+    return updatedUser;
+  } catch {
+    return user;
+  }
+}
+
 export function isAuthenticated() {
   return !!localStorage.getItem("token");
 }
@@ -55,5 +91,7 @@ export function isAuthenticated() {
 export function logout() {
   localStorage.removeItem("user");
   localStorage.removeItem("token");
+  localStorage.removeItem("sid_instituto");
+  setAuthHeader(null);
   window.location.href = "/src/pages/login/index.html";
 }

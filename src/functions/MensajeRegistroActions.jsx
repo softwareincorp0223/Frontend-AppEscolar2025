@@ -3,14 +3,19 @@ import {
   InstitutoDataAdd,
   InstitutoData,
   InstitutoDataUpdate,
+  InstitutoDataFilter
 } from "./general/DataActions";
 import { fechaFormateada } from "./general/Functions";
 
 export const obtenerRegistroMensajes = async (setRegistroMensajes) => {
   try {
-    const registroMensajes = await InstitutoData(
-      "vista-registro-mensajes?sid_instituto="
+
+    const sid_instituto = localStorage.getItem("sid_instituto");
+
+    const registroMensajes = await InstitutoDataFilter(
+      "vista-registro-mensajes?sid_instituto=" + sid_instituto + "&eliminado=si"
     );
+    console.log(registroMensajes);
 
     const formateados = registroMensajes.map((data) => ({
       ...data,

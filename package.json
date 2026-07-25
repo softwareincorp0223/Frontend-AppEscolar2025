@@ -28,6 +28,7 @@
     "jquery": "^3.6.2",
     "material-icons": "^1.13.14",
     "pdfmake": "^0.2.20",
+    "qrcode": "^1.5.4",
     "qrcode.react": "^4.2.0",
     "qrcodejs2": "^0.0.2",
     "quill": "^2.0.3",

@@ -5,6 +5,7 @@ import TableButtons from "../../components/TableButtons";
 import ActionButtons from "../../components/ActionButtons";
 import Filter from "../../components/Filter";
 import { obtenerRegistroMensajes } from "../../functions/MensajeRegistroActions";
+import { handleRestore } from "../../functions/MensajeActions";
 import { filtrarTabla } from "../../functions/general/Functions";
 
 export default function MensajeRegistro() {
@@ -71,7 +72,18 @@ export default function MensajeRegistro() {
               columns={columns}
               data={registros}
               renderActions={(row) => (
-                <ActionButtons row={row} actions={["restore"]} />
+                <ActionButtons 
+                row={row} 
+                actions={[
+                    {
+                      label: "Restaurar",
+                      icon: "restore",
+                      className: "btn-outline-success",
+                      onClick: (row) =>
+                        handleRestore(row, obtenerRegistroMensajes),
+                    },
+                  ]}
+                />
               )}
               headerButtons={(row) => (
                 <TableButtons row={row} actions={["excel"]} />

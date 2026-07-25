@@ -11,17 +11,52 @@ import { obtenerEstadisticas } from "../../functions/EstadisticasActions";
 const FALLBACK_STATS = {
   totalMensajesMes: 0,
   totalProfesores: 0,
+  totalPadres: 0,
+  totalUsuarios: 0,
   totalAlumnos: 0,
+  totalNiveles: 0,
+  totalGrados: 0,
+  totalGrupos: 0,
   totalTareasMes: 0,
+  totalTareasSemana: 0,
   totalEventosProximos: 0,
+  totalEventosHoy: 0,
   variacionMensajesMes: 0,
   mensajesPorDia: [],
   actividadSemanal: [],
+  alumnosPorNivel: [],
   eventosProximos: [],
   actividadReciente: [],
 };
 
 const EVENT_BACKGROUNDS = [imagenFondo, imagenFondo2, imagenFondo3];
+
+function StatCard({
+  icon,
+  color,
+  label,
+  value,
+  detail,
+  children,
+  className = "",
+}) {
+  return (
+    <div className={`card border-0 shadow-sm rounded-4 h-100 dashboard-card ${className}`}>
+      <div className="card-body">
+        <div className="d-flex justify-content-between align-items-start mb-3">
+          <div className={`icon-box bg-${color}-subtle text-${color}`}>
+            <span className="material-icons">{icon}</span>
+          </div>
+          {children}
+        </div>
+
+        <p className="text-muted small text-uppercase mb-1">{label}</p>
+        <h2 className="fw-bold mb-1">{value}</h2>
+        {detail && <div className="small text-muted">{detail}</div>}
+      </div>
+    </div>
+  );
+}
 
 export default function Estadisticas() {
   const [estadisticas, setEstadisticas] = useState(FALLBACK_STATS);
@@ -61,6 +96,14 @@ export default function Estadisticas() {
       { label: "Dom", total: 0 },
     ];
   }, [estadisticas.actividadSemanal]);
+
+  const alumnosPorNivel = useMemo(() => {
+    if (estadisticas.alumnosPorNivel.length > 0) {
+      return estadisticas.alumnosPorNivel.slice(0, 4);
+    }
+
+    return [{ nivel: "Sin datos", total: 0 }];
+  }, [estadisticas.alumnosPorNivel]);
 
   const slidesEventos = useMemo(() => {
     if (estadisticas.eventosProximos.length > 0) {
@@ -102,102 +145,102 @@ export default function Estadisticas() {
   const variacionMensajes = Number(estadisticas.variacionMensajesMes || 0);
   const tendenciaMensajes = variacionMensajes >= 0;
   const etiquetaVariacion = `${variacionMensajes >= 0 ? "+" : ""}${variacionMensajes}%`;
+  const totalComunidad =
+    Number(estadisticas.totalAlumnos || 0) +
+    Number(estadisticas.totalPadres || 0) +
+    Number(estadisticas.totalUsuarios || 0);
 
   return (
     <Layout>
-      <div className="container-fluid">
-        <div className="row g-3 mb-4">
-          <div className="col-12 col-md-6 col-xl-4 d-flex">
-            <div className="card border-0 shadow-sm rounded-4 flex-fill dashboard-card">
-              <div className="card-body">
-                <div className="d-flex justify-content-between mb-2">
-                  <div className="icon-box bg-primary-subtle text-primary">
-                    <span className="material-icons">mail</span>
-                  </div>
-
-                  <div
-                    className={`small fw-semibold d-flex align-items-center ${tendenciaMensajes ? "text-success" : "text-danger"
-                      }`}
-                  >
-                    {etiquetaVariacion}
-                    <span className="material-icons ms-1">
-                      {tendenciaMensajes ? "trending_up" : "trending_down"}
-                    </span>
-                  </div>
-                </div>
-
-                <p className="text-muted small mb-0">TOTAL MENSAJES DEL MES</p>
-
-                <div className="d-flex align-items-center justify-content-between mt-2">
-                  <h2 className="fw-bold mb-0">
-                    {estadisticas.totalMensajesMes}
-                  </h2>
-
-                  <Box sx={{ width: { xs: 120, md: 160 } }}>
-                    <BarChart
-                      series={[
-                        {
-                          data: actividadSemanal.map((item) => item.total),
-                          color: "#22c55e",
-                          borderRadius: 6,
-                        },
-                      ]}
-                      height={70}
-                      xAxis={[
-                        {
-                          scaleType: "band",
-                          data: actividadSemanal.map((item) => item.label),
-                          disableLine: true,
-                          disableTicks: true,
-                          tickLabelStyle: { display: "none" },
-                        },
-                      ]}
-                      yAxis={[
-                        {
-                          disableLine: true,
-                          disableTicks: true,
-                          tickLabelStyle: { display: "none" },
-                        },
-                      ]}
-                      grid={{ horizontal: false, vertical: false }}
-                      margin={{ top: 5, bottom: 5 }}
-                    />
-                  </Box>
-                </div>
-              </div>
-            </div>
+      <div className="container-fluid pb-4">
+        <div className="row g-3 mb-3">
+          <div className="col-12 col-md-6 col-xl-3">
+            <StatCard
+              icon="school"
+              color="primary"
+              label="Alumnos registrados"
+              value={estadisticas.totalAlumnos}
+              detail={`${estadisticas.totalPadres} padres vinculados`}
+            />
           </div>
 
-          <div className="col-12 col-md-6 col-xl-4 d-flex">
-            <div className="card border-0 shadow-sm rounded-4 flex-fill dashboard-card">
-              <div className="card-body">
-                <div className="d-flex justify-content-between mb-2">
-                  <div className="icon-box bg-success-subtle text-success">
-                    <span className="material-icons">groups</span>
-                  </div>
-
-                  <div className="text-muted small fw-semibold d-flex align-items-center">
-                    {estadisticas.totalAlumnos} alumnos
-                  </div>
-                </div>
-
-                <p className="text-muted small mb-0">TOTAL PROFESORES</p>
-                <h2 className="fw-bold mt-2 mb-1">
-                  {estadisticas.totalProfesores}
-                </h2>
-
-                <div className="small text-muted">
-                  {estadisticas.totalTareasMes} tareas este mes -{" "}
-                  {estadisticas.totalEventosProximos} eventos proximos
-                </div>
-              </div>
-            </div>
+          <div className="col-12 col-md-6 col-xl-3">
+            <StatCard
+              icon="groups"
+              color="success"
+              label="Comunidad escolar"
+              value={totalComunidad}
+              detail={`${estadisticas.totalUsuarios} usuarios del sistema`}
+            />
           </div>
 
-          <div className="col-12 col-md-12 col-xl-4 d-flex">
+          <div className="col-12 col-md-6 col-xl-3">
+            <StatCard
+              icon="person"
+              color="info"
+              label="Profesores activos"
+              value={estadisticas.totalProfesores}
+              detail="Con materias asignadas"
+            />
+          </div>
+
+          <div className="col-12 col-md-6 col-xl-3">
+            <StatCard
+              icon="domain"
+              color="warning"
+              label="Estructura academica"
+              value={estadisticas.totalNiveles}
+              detail={`${estadisticas.totalGrados} grados / ${estadisticas.totalGrupos} grupos`}
+            />
+          </div>
+        </div>
+
+        <div className="row g-3 mb-3">
+          <div className="col-12 col-md-6 col-xl-3">
+            <StatCard
+              icon="mail"
+              color="primary"
+              label="Mensajes del mes"
+              value={estadisticas.totalMensajesMes}
+              detail="Comunicados enviados"
+            >
+              <div
+                className={`small fw-semibold d-flex align-items-center ${
+                  tendenciaMensajes ? "text-success" : "text-danger"
+                }`}
+              >
+                {etiquetaVariacion}
+                <span className="material-icons ms-1">
+                  {tendenciaMensajes ? "trending_up" : "trending_down"}
+                </span>
+              </div>
+            </StatCard>
+          </div>
+
+          <div className="col-12 col-md-6 col-xl-3">
+            <StatCard
+              icon="assignment"
+              color="warning"
+              label="Tareas del mes"
+              value={estadisticas.totalTareasMes}
+              detail={`${estadisticas.totalTareasSemana} publicadas esta semana`}
+            />
+          </div>
+
+          <div className="col-12 col-md-6 col-xl-3">
+            <StatCard
+              icon="today"
+              color="danger"
+              label="Eventos de hoy"
+              value={estadisticas.totalEventosHoy}
+              detail={`${estadisticas.totalEventosProximos} eventos proximos`}
+            />
+          </div>
+
+          <div className="col-12 col-md-6 col-xl-3">
             <div
               id="carouselEventos"
-              className="carousel slide shadow-sm rounded-4 overflow-hidden flex-fill"
+              className="carousel slide shadow-sm rounded-4 overflow-hidden h-100"
               data-bs-ride="carousel"
               data-bs-interval="6000"
             >
@@ -237,8 +280,61 @@ export default function Estadisticas() {
         </div>
 
         <div className="row g-3">
-          <div className="col-12 col-lg-7">
-            <div className="card border-0 shadow-sm rounded-4">
+          <div className="col-12 col-xl-6">
+            <div className="card border-0 shadow-sm rounded-4 h-100">
+              <div className="card-body">
+                <h5 className="fw-bold mb-3">Resumen operativo</h5>
+
+                <div className="row g-3">
+                  <div className="col-12 col-lg-12">
+                    <p className="text-muted small mb-2">Actividad semanal</p>
+                    <BarChart
+                      series={[
+                        {
+                          data: actividadSemanal.map((item) => item.total),
+                          color: "#3b82f6",
+                          borderRadius: 6,
+                        },
+                      ]}
+                      height={220}
+                      xAxis={[
+                        {
+                          scaleType: "band",
+                          data: actividadSemanal.map((item) => item.label),
+                        },
+                      ]}
+                    />
+                  </div>
+
+                  <div className="col-12 col-lg-12">
+                    <p className="text-muted small mb-2">Alumnos por nivel</p>
+                    <Box sx={{ width: "100%" }}>
+                      <BarChart
+                        layout="horizontal"
+                        series={[
+                          {
+                            data: alumnosPorNivel.map((item) => item.total),
+                            color: "#22c55e",
+                            borderRadius: 6,
+                          },
+                        ]}
+                        height={220}
+                        yAxis={[
+                          {
+                            scaleType: "band",
+                            data: alumnosPorNivel.map((item) => item.nivel),
+                          },
+                        ]}
+                      />
+                    </Box>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="col-12 col-xl-6">
+            <div className="card border-0 shadow-sm rounded-4 h-100">
               <div className="card-body">
                 <h5 className="fw-bold mb-4">Actividad Reciente</h5>
 
@@ -258,49 +354,6 @@ export default function Estadisticas() {
                     <div className="text-muted small">{actividad.time}</div>
                   </div>
                 ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="col-12 col-lg-5">
-            <div className="card border-0 shadow-sm rounded-4 h-100">
-              <div className="card-body d-flex flex-column">
-                <h5 className="fw-bold mb-3">Mensajes rapidos</h5>
-
-                <p className="text-muted small">
-                  Envia comunicados a alumnos o padres de forma inmediata.
-                </p>
-
-                <div className="d-grid gap-2 mb-4">
-                  <a
-                    href="/src/pages/mensajes/index.html"
-                    className="btn btn-primary rounded-3"
-                  >
-                    <span className="material-icons me-2">add</span>
-                    Nuevo mensaje
-                  </a>
-                </div>
-
-                <div className="mt-auto">
-                  <p className="small text-muted mb-2">Actividad semanal</p>
-
-                  <BarChart
-                    series={[
-                      {
-                        data: actividadSemanal.map((item) => item.total),
-                        color: "#3b82f6",
-                        borderRadius: 6,
-                      },
-                    ]}
-                    height={120}
-                    xAxis={[
-                      {
-                        scaleType: "band",
-                        data: actividadSemanal.map((item) => item.label),
-                      },
-                    ]}
-                  />
-                </div>
               </div>
             </div>
           </div>

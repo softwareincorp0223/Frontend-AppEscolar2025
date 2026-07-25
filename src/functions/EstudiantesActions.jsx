@@ -1,4 +1,7 @@
 import { showAlert } from "./general/Alerts";
+import pdfMake from "pdfmake/build/pdfmake";
+import pdfFonts from "pdfmake/build/vfs_fonts";
+import QRCode from "qrcode";
 import {
   InstitutoData,
   InstitutoDataAdd,
@@ -10,10 +13,12 @@ import { generarCodigoQR } from "./general/Functions";
 import { phpRequest } from "./general/PhpDataActions";
 import { compressImage } from "./general/ImageCompresor";
 
+pdfMake.vfs = pdfFonts.vfs;
+
 export const obtenerAlumnos = async (setAlumnos) => {
   try {
     const alumnosApi = await InstitutoData(
-      "alumno?include=Nivel,Grado,Grupo&sid_instituto=",
+      "alumno/activos?sid_instituto=",
     );
     const formateados = alumnosApi.map((data) => ({
       ...data,
@@ -91,6 +96,78 @@ export const handleSaveAlumnos = async (
   }
 
   await obtenerAlumnos();
+};
+
+export const descargarQRsAlumnos = async () => {
+  console.log("descargar");
+  
+  try {
+    const alumnosApi = await InstitutoData(
+      "alumno/activos?sid_instituto=",
+    );
+
+    if (!alumnosApi.length) {
+      showAlert("error", "No hay alumnos para generar QRs");
+      return;
+    }
+
+    const alumnosConQR = await Promise.all(
+      alumnosApi.map(async (alumno) => ({
+        ...alumno,
+        qrImagen: await QRCode.toDataURL(alumno.codigo_qr),
+      })),
+    );
+
+    const hoy = new Date();
+    const fecha = `${hoy.getDate()}${hoy.getMonth() + 1}${hoy.getFullYear()}`;
+
+    const content = alumnosConQR.map((alumno, index) => {
+      const nombreCompleto =
+        `${alumno.nombre ?? ""} ${alumno.apellido ?? ""}`.trim();
+      const grado = alumno.Grado?.nombre || "Sin Grado";
+      const grupo = alumno.Grupo?.nombre || "Sin Grupo";
+
+      return {
+        stack: [
+          {
+            text: nombreCompleto || "Sin nombre",
+            alignment: "center",
+            bold: true,
+            fontSize: 24,
+            margin: [0, 40, 0, 20],
+          },
+          {
+            text: `Grado: ${grado}`,
+            alignment: "center",
+            fontSize: 16,
+            margin: [0, 0, 0, 8],
+          },
+          {
+            text: `Grupo: ${grupo}`,
+            alignment: "center",
+            fontSize: 16,
+            margin: [0, 0, 0, 35],
+          },
+          {
+            image: alumno.qrImagen,
+            width: 260,
+            alignment: "center",
+          },
+        ],
+        pageBreak: index < alumnosConQR.length - 1 ? "after" : undefined,
+      };
+    });
+
+    const docDefinition = {
+      pageSize: "A4",
+      pageMargins: [40, 60, 40, 60],
+      content,
+    };
+
+    pdfMake.createPdf(docDefinition).download(`QRs_Alumnos_${fecha}.pdf`);
+  } catch (error) {
+    showAlert("error", "Error al generar PDF de QRs");
+  }
 };
 
 export const obtenerAlumnosPadres = async (id_padre, setAlumnos) => {
