@@ -122,7 +122,7 @@ export default function MensajeDetails({ mensaje, onClose }) {
             }}
           >
             {/* Botón cerrar alineado a la derecha */}
-            <div className="d-flex justify-content-end">
+            {/* <div className="d-flex justify-content-end">
               <button
                 className="btn btn-sm text-danger fw-bold mb-2"
                 onClick={onClose}
@@ -132,7 +132,7 @@ export default function MensajeDetails({ mensaje, onClose }) {
                 </i>
                 Cerrar
               </button>
-            </div>
+            </div> */}
 
             {/* Contenido alineado a la izquierda */}
             <div className="mt-2">

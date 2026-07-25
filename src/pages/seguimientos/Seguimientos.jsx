@@ -8,6 +8,7 @@ import SeguimientoDetails from "../../components/details/SeguimientosDetails";
 import { exportarExcel } from "../../functions/general/exportarExcel";
 import { obtenerAsignarAtributosExcel } from "../../functions/AsignarAtributoActions";
 import DetailsContainer from "../../functions/general/DetailsContainer";
+import Modal from "../../components/Modal";
 
 
 export default function Seguimientos() {
@@ -76,21 +77,25 @@ export default function Seguimientos() {
         )}
         onSelectionChange={(ids) => setDeleteCheck(ids)}
       />
+      <Modal
+        isOpen={!!selectedExtra}
+        title="Seguimiento del Alumno"
+        onClose={() => setSelectedExtra(null)}
+      >
+        {selectedExtra && (
+          <SeguimientoDetails
+            alumno={selectedExtra}
+            onClose={() => setSelectedExtra(null)}
+          />
+        )}
+      </Modal>
 
-      <DetailsContainer visible={!!selectedExtra} top={650}>
+      {/* <DetailsContainer visible={!!selectedExtra} top={650}>
         <SeguimientoDetails
           alumno={selectedExtra}
           onClose={() => setSelectedExtra(null)}
         />
-      </DetailsContainer>
-
-      {/* {selectedExtra ? (
-        <SeguimientoDetails alumno={selectedExtra} onClose={() => setSelectedExtra(null)} />
-
-      ) : (
-        <
-      )} */}
-
+      </DetailsContainer> */}
     </Layout>
   );
 }

@@ -8,6 +8,7 @@ import ExtracurricularDetails from "../../components/details/ExtracurricularDeta
 import { obtenerExtracurricular, handleDelete, handleSave, obtenerExtracurricularesExcel } from "../../functions/ExtracurricularActions";
 import { exportarExcel } from "../../functions/general/exportarExcel";
 import DetailsContainer from "../../functions/general/DetailsContainer";
+import Modal from "../../components/Modal";
 
 
 export default function Extracurriculares() {
@@ -75,39 +76,26 @@ export default function Extracurriculares() {
           />
         )}
       />
-
+      <Modal
+        isOpen={!!selectedExtra}
+        title="Detalle del Extracurricular"
+        onClose={() => setSelectedExtra(null)}
+      >
+        {selectedExtra && (
+          <ExtracurricularDetails
+            alumno={selectedExtra}
+            onClose={() => setSelectedExtra(null)}
+          />
+        )}
+      </Modal>
+      {/* 
       <DetailsContainer visible={!!selectedExtra} top={650}>
         <ExtracurricularDetails
           alumno={selectedExtra}
           onClose={() => setSelectedExtra(null)}
         />
-      </DetailsContainer>
-      {/* {selectedExtra ? (
-        <ExtracurricularDetails alumno={selectedExtra} onClose={() => setSelectedExtra(null)} />
-      ) : (
+      </DetailsContainer> */}
 
-        <Table
-          id="extracurricularTable"
-          title="Extracurricular"
-          columns={columnsExtracurricular}
-          data={extracurriculares}
-          renderActions={(row) => (
-            <ActionButtons
-              row={row}
-              setSelectedUser={setSelectedExtra}
-              onDelete={() => handleDelete(row, () => obtenerExtracurricular(setExtracurriculares))}
-              onEdit={() => setEditingExtracurricular(row)}
-              actions={["view", "edit", "delete"]}
-            />
-          )}
-          headerButtons={(row) => (
-            <TableButtons row={row}
-              actions={["excel"]}
-              onActions={tableHandlers}
-            />
-          )}
-        />
-      )} */}
     </Layout>
   );
 }

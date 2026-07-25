@@ -21,7 +21,7 @@ import { obtenerAlumnos } from "../../functions/EstudiantesActions";
 import { obtenerExtracurricular } from "../../functions/ExtracurricularActions";
 import MensajeForm from "../../components/custom/mensajes/MensajesForm";
 import MensajeDetails from "../../components/details/MensajesDetails";
-import DetailsContainer from "../../functions/general/DetailsContainer";
+import Modal from "../../components/Modal";
 
 export default function Mensaje() {
   const [mensajes, setMensajes] = useState([]);
@@ -184,12 +184,18 @@ export default function Mensaje() {
               )}
             />
 
-            <DetailsContainer visible={!!selectedMensaje} top={650}>
-              <MensajeDetails
-                mensaje={selectedMensaje}
-                onClose={() => setSelectedMensaje(null)}
-              />
-            </DetailsContainer>
+            <Modal
+              isOpen={!!selectedMensaje}
+              title="Detalle del mensaje"
+              onClose={() => setSelectedMensaje(null)}
+            >
+              {selectedMensaje && (
+                <MensajeDetails
+                  mensaje={selectedMensaje}
+                  onClose={() => setSelectedMensaje(null)}
+                />
+              )}
+            </Modal>
           </div>
         </div>
       </div>

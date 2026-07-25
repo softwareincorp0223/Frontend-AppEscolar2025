@@ -13,6 +13,9 @@ import { obtenerEventos, handleDelete, handleSave } from "../../functions/Evento
 import { obtenerNiveles } from "../../functions/NivelesActions";
 import { obtenerGradosPorNivel } from "../../functions/GradosActions";
 import { obtenerGruposPorGrados } from "../../functions/GruposActions";
+import Modal from "../../components/Modal";
+import EventoDetails from "../../components/details/EventoDetails";
+
 
 // 🔹 Configurar el localizador de fechas en español
 const locales = {
@@ -43,6 +46,7 @@ export default function Calendario() {
 
   const [todaEscuela, setTodaEscuela] = useState(false);
   const [events, setEvents] = useState([]);
+  const [selectedEvento, setSelectedEvento] = useState(null);
 
 
   useEffect(() => {
@@ -224,9 +228,16 @@ export default function Calendario() {
                     endAccessor="end"
                     views={["month"]}
                     selectable
-                    onSelectEvent={(event) =>
-                      handleDelete(event, () => obtenerEventos(setEvento))
-                    }
+                    // onSelectEvent={(event) =>
+                    //   handleDelete(event, () => obtenerEventos(setEvento))
+                    // }
+                    onSelectEvent={(event) => {
+                      const eventoCompleto = evento.find(
+                        (item) => item.id_evento === event.id_evento
+                      );
+
+                      setSelectedEvento(eventoCompleto);
+                    }}
                     onSelectSlot={(slot) => {
                       const isoDate = slot.start.toISOString().slice(0, 10);
                       setForm((p) => ({ ...p, date: isoDate }));
@@ -267,6 +278,26 @@ export default function Calendario() {
             // initialValues={editingEvento ? { nombre: editingEvento.nombre } : {}}
             />
           </div>
+          <Modal
+            isOpen={!!selectedEvento}
+            title="Detalle del evento"
+            size="lg"
+            onClose={() => setSelectedEvento(null)}
+          >
+            {selectedEvento && (
+              <EventoDetails
+                evento={selectedEvento}
+                niveles={niveles}
+                onClose={() => setSelectedEvento(null)}
+                onDelete={() =>
+                  handleDelete(selectedEvento, async () => {
+                    await obtenerEventos(setEvento);
+                    setSelectedEvento(null);
+                  })
+                }
+              />
+            )}
+          </Modal>
         </div>
       </div>
     </Layout>

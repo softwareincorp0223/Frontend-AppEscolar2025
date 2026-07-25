@@ -101,7 +101,7 @@ export default function ExtracurricularDetails({ alumno, onClose }) {
       style={{ maxWidth: "1400px", borderRadius: "18px" }}
     >
       {/* Encabezado */}
-      <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-4">
+      {/* <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-4">
         <div>
           <h5 className="mb-1 fw-bold">Detalles del extracurricular</h5>
           <small className="text-muted">
@@ -118,7 +118,7 @@ export default function ExtracurricularDetails({ alumno, onClose }) {
           </i>
           Cerrar
         </button>
-      </div>
+      </div> */}
 
       <div className="row g-4">
         {/* COLUMNA IZQUIERDA */}
