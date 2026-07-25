@@ -62,11 +62,11 @@ export default function SeguimientoDetails({ alumno, onClose }) {
       style={{ maxWidth: "1400px" }}
     >
       {/* Header */}
-      <div className="card border-0 shadow-sm mb-4">
+      {/* <div className="card border-0 shadow-sm mb-4">
         <div className="card-body d-flex justify-content-between align-items-center">
           <div>
             <h4 className="fw-bold mb-1">
-              Seguimiento del Alumno
+              
             </h4>
             <small className="text-muted">
               Administración de evaluaciones y atributos
@@ -83,7 +83,7 @@ export default function SeguimientoDetails({ alumno, onClose }) {
             Cerrar
           </button>
         </div>
-      </div>
+      </div> */}
 
       <div className="row g-4">
 
