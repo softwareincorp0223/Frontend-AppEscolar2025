@@ -5,17 +5,28 @@ const API_URL = "http://localhost:4000/api/"; // <-- ajusta tu endpoint real
 // Configurar axios globalmente
 axios.defaults.withCredentials = true; // si usas cookies
 axios.defaults.headers.common["Accept"] = "application/json";
-const sid_instituto = localStorage.getItem("sid_instituto");
+
+const getSidInstituto = () => localStorage.getItem("sid_instituto") || "";
+
+const authHeaders = (extraHeaders = {}) => {
+  const token = localStorage.getItem("token");
+
+  return {
+    ...extraHeaders,
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+};
 
 //leer datos de API por instituto
 export async function InstitutoData(consulta) {
+  const sid_instituto = getSidInstituto();
   console.log(API_URL + consulta + sid_instituto);
 
   try {
     const res = await axios.get(API_URL + consulta + sid_instituto, {
-      headers: {
+      headers: authHeaders({
         "Content-Type": "application/json",
-      },
+      }),
     });
 
     // Aquí asumimos que la respuesta trae user + token
@@ -38,7 +49,7 @@ export async function InstitutoData(consulta) {
 export async function InstitutoDataFilter(consulta) {
   try {
     const res = await axios.get(API_URL + consulta, {
-      headers: { "Content-Type": "application/json" },
+      headers: authHeaders({ "Content-Type": "application/json" }),
     });
 
     return res.data;
@@ -67,10 +78,10 @@ export async function InstitutoDataAdd(endpoint, data) {
 
     const res = await axios.post(API_URL + endpoint, data, {
       headers: isFormData
-        ? {}
-        : {
+        ? authHeaders()
+        : authHeaders({
             "Content-Type": "application/json",
-          },
+          }),
     });
 
     return res.data;
@@ -98,10 +109,10 @@ export async function InstitutoDataUpdate(endpoint, data) {
 
     const res = await axios.put(API_URL + endpoint, data, {
       headers: isFormData
-        ? {}
-        : {
+        ? authHeaders()
+        : authHeaders({
             "Content-Type": "application/json",
-          },
+          }),
     });
 
     return res.data;
@@ -128,9 +139,9 @@ export async function InstitutoDataDelete(endpointOrIds, endpoint, id_field) {
     let url = API_URL;
     let options = {
       method: "DELETE",
-      headers: {
+      headers: authHeaders({
         "Content-Type": "application/json",
-      },
+      }),
     };
 
     // Caso 1: eliminar varios (array de IDs)

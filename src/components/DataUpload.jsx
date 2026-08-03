@@ -1,4 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
+import $ from "jquery";
+import "select2/dist/css/select2.css";
+
+window.$ = window.$ || $;
+window.jQuery = window.jQuery || $;
 
 /**
  * DataUpload
@@ -34,10 +39,32 @@ export default function DataUpload({
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showReqModal, setShowReqModal] = useState(false);
+  const [validationFeedback, setValidationFeedback] = useState(null);
+  const [templateSelectionOpen, setTemplateSelectionOpen] = useState(false);
+  const [templateOptions, setTemplateOptions] = useState([]);
+  const [selectedTemplateOptions, setSelectedTemplateOptions] = useState([]);
+  const [pendingTemplateOption, setPendingTemplateOption] = useState("");
+  const [templateNivel, setTemplateNivel] = useState("");
+  const [templateGrado, setTemplateGrado] = useState("");
+  const [templateGrupo, setTemplateGrupo] = useState("");
+  const [templateNumeroEvaluaciones, setTemplateNumeroEvaluaciones] = useState("1");
+  const [templateOptionsLoading, setTemplateOptionsLoading] = useState(false);
   const fileInputRef = useRef();
+  const templateSelectRef = useRef(null);
 
   // Obtengo el módulo activo a partir del id seleccionado
   const active = modules.find((m) => m.id === selectedModuleId) || {};
+  const isPhpImport = Boolean(active.phpEndpoint);
+  const usesTemplateSelection =
+    (active.id === "extracurriculares" ||
+      active.id === "seguimientos" ||
+      active.id === "calificaciones") &&
+    isPhpImport;
+  const isSeguimientosImport = active.id === "seguimientos" && isPhpImport;
+  const isCalificacionesImport = active.id === "calificaciones" && isPhpImport;
+  const usesSchoolGroupSelection = isSeguimientosImport || isCalificacionesImport;
+  const sidInstituto = () => localStorage.getItem("sid_instituto") || "";
+  const idUsuario = () => localStorage.getItem("id_usuario") || "";
 
   // Si cambian los módulos desde props y no hay ninguno seleccionado, elijo el primero
   useEffect(() => {
@@ -59,12 +86,82 @@ export default function DataUpload({
     fetchHistory();
     setFile(null);
     setStep(1);
+    setValidationFeedback(null);
+    setTemplateSelectionOpen(false);
+    setSelectedTemplateOptions([]);
+    setPendingTemplateOption("");
+    setTemplateNivel("");
+    setTemplateGrado("");
+    setTemplateGrupo("");
+    setTemplateNumeroEvaluaciones("1");
     if (fileInputRef.current) fileInputRef.current.value = "";
   }, [selectedModuleId]);
+
+  useEffect(() => {
+    if (!templateSelectionOpen || !templateSelectRef.current) return;
+
+    let cancelled = false;
+
+    async function initSelect2() {
+      window.$ = $;
+      window.jQuery = $;
+      const select2Module = await import("select2/dist/js/select2.full");
+      const attachSelect2 = select2Module.default || select2Module;
+      if (typeof attachSelect2 === "function") {
+        attachSelect2(window, $);
+      }
+      if (cancelled || !templateSelectRef.current) return;
+
+      templateSelectRef.current.removeAttribute("multiple");
+      const select = $(templateSelectRef.current);
+
+      if (select.data("select2")) {
+        select.select2("destroy");
+      }
+
+      select.select2({
+        width: "100%",
+        placeholder: usesSchoolGroupSelection ? "Busca un grupo" : "Busca una extracurricular",
+        dropdownParent: $("#extracurricularTemplateModal"),
+        allowClear: true,
+      });
+
+      select.val(pendingTemplateOption || "").trigger("change.select2");
+      select.on("change.select2-template", () => {
+        setPendingTemplateOption(select.val() || "");
+      });
+    }
+
+    initSelect2().catch((err) => {
+      console.error("Error inicializando Select2:", err);
+    });
+
+    return () => {
+      cancelled = true;
+      if (!templateSelectRef.current) return;
+      const select = $(templateSelectRef.current);
+      select.off(".select2-template");
+      if (select.data("select2")) {
+        select.select2("destroy");
+      }
+    };
+  }, [
+    templateSelectionOpen,
+    templateOptions,
+    selectedTemplateOptions,
+    usesSchoolGroupSelection,
+    templateNivel,
+    templateGrado,
+  ]);
 
   // --- Fetch historial ---
   // Yo intento traer el historial del endpoint si existe y no estoy en modo test.
   const fetchHistory = async () => {
+    if (isPhpImport) {
+      setHistory([]);
+      return;
+    }
+
     if (active.historyUrl && !isTestMode) {
       try {
         const res = await fetch(active.historyUrl);
@@ -90,7 +187,167 @@ export default function DataUpload({
 
   // --- Descargar plantilla ---
   // Si hay URL pública uso window.open, si no informo al usuario.
+  const openTemplateSelection = async () => {
+    setTemplateSelectionOpen(true);
+    setTemplateOptionsLoading(true);
+    setSelectedTemplateOptions([]);
+    setPendingTemplateOption("");
+    setTemplateNivel("");
+    setTemplateGrado("");
+    setTemplateGrupo("");
+    setTemplateNumeroEvaluaciones("1");
+
+    try {
+      const url = new URL(active.phpEndpoint);
+      url.searchParams.set("accion", "opciones");
+      url.searchParams.set("sid_instituto", sidInstituto());
+      const res = await fetch(url.toString(), { credentials: "include" });
+      const json = await res.json();
+
+      if (json.status !== "ok") {
+        throw new Error(
+          json.msg ||
+            (usesSchoolGroupSelection
+              ? "No se pudieron cargar los grupos."
+              : "No se pudieron cargar las extracurriculares.")
+        );
+      }
+
+      setTemplateOptions(usesSchoolGroupSelection ? json.data || {} : Array.isArray(json.data) ? json.data : []);
+    } catch (err) {
+      console.error(err);
+      alert(usesSchoolGroupSelection ? "Error al cargar los grupos." : "Error al cargar las extracurriculares.");
+      setTemplateSelectionOpen(false);
+    } finally {
+      setTemplateOptionsLoading(false);
+    }
+  };
+
+  const nivelesTemplate = usesSchoolGroupSelection
+    ? Array.isArray(templateOptions?.niveles)
+      ? templateOptions.niveles
+      : []
+    : [];
+  const selectedNivelTemplate = nivelesTemplate.find(
+    (item) => item.id_nivel === templateNivel
+  );
+  const gradosTemplate = selectedNivelTemplate?.grados || [];
+  const selectedGradoTemplate = gradosTemplate.find(
+    (item) => item.id_grado === templateGrado
+  );
+  const gruposTemplate = selectedGradoTemplate?.grupos || [];
+  const parsedTemplateNumeroEvaluaciones = Number(templateNumeroEvaluaciones);
+  const hasValidTemplateNumeroEvaluaciones =
+    Number.isInteger(parsedTemplateNumeroEvaluaciones) &&
+    parsedTemplateNumeroEvaluaciones >= 1;
+  const opcionesSelectTemplate = usesSchoolGroupSelection
+    ? gruposTemplate
+    : Array.isArray(templateOptions)
+    ? templateOptions
+    : [];
+
+  const addTemplateOption = () => {
+    if (!pendingTemplateOption) {
+      alert(usesSchoolGroupSelection ? "Selecciona un grupo para agregar." : "Selecciona una extracurricular para agregar.");
+      return;
+    }
+
+    if (isCalificacionesImport) {
+      setTemplateGrupo(pendingTemplateOption);
+      setSelectedTemplateOptions([pendingTemplateOption]);
+      setPendingTemplateOption("");
+      if (templateSelectRef.current) {
+        $(templateSelectRef.current).val("").trigger("change");
+      }
+      return;
+    }
+
+    setSelectedTemplateOptions((prev) =>
+      prev.includes(pendingTemplateOption) ? prev : [...prev, pendingTemplateOption]
+    );
+    setPendingTemplateOption("");
+
+    if (templateSelectRef.current) {
+      $(templateSelectRef.current).val("").trigger("change");
+    }
+  };
+
+  const removeTemplateOption = (id) => {
+    setSelectedTemplateOptions((prev) => prev.filter((item) => item !== id));
+  };
+
+  const getTemplateOptionName = (id) => {
+    if (usesSchoolGroupSelection) {
+      for (const nivel of nivelesTemplate) {
+        for (const grado of nivel.grados || []) {
+          const grupo = (grado.grupos || []).find((item) => item.id_grupo === id);
+          if (grupo) {
+            return `${nivel.nombre} / ${grado.nombre} / ${grupo.nombre}`;
+          }
+        }
+      }
+      return id;
+    }
+
+    return templateOptions.find((item) => item.id_extracurricular === id)?.nombre || id;
+  };
+
+  const downloadSelectedTemplate = () => {
+    const currentSelection = selectedTemplateOptions;
+
+    if (isCalificacionesImport) {
+      const numeroEvaluaciones = Number(templateNumeroEvaluaciones);
+      if (!templateNivel || !templateGrado || !templateGrupo) {
+        alert("Selecciona nivel, grado y grupo.");
+        return;
+      }
+      if (!Number.isInteger(numeroEvaluaciones) || numeroEvaluaciones < 1) {
+        alert("Indica un numero de evaluaciones valido.");
+        return;
+      }
+
+      const url = new URL(active.phpEndpoint);
+      url.searchParams.set("accion", "plantilla");
+      url.searchParams.set("sid_instituto", sidInstituto());
+      url.searchParams.set("nivel_id", templateNivel);
+      url.searchParams.set("grado_id", templateGrado);
+      url.searchParams.set("grupo_id", templateGrupo);
+      url.searchParams.set("numero_evaluaciones", String(numeroEvaluaciones));
+      window.open(url.toString(), "_blank");
+      setTemplateSelectionOpen(false);
+      return;
+    }
+
+    if (!currentSelection.length) {
+      alert(isSeguimientosImport ? "Selecciona al menos un grupo." : "Selecciona al menos una extracurricular.");
+      return;
+    }
+
+    const url = new URL(active.phpEndpoint);
+    url.searchParams.set("accion", "plantilla");
+    url.searchParams.set("sid_instituto", sidInstituto());
+    url.searchParams.set(
+      isSeguimientosImport ? "grupo_ids" : "extracurricular_ids",
+      currentSelection.join(",")
+    );
+    window.open(url.toString(), "_blank");
+    setTemplateSelectionOpen(false);
+  };
+
   const handleDownloadTemplate = () => {
+    if (usesTemplateSelection) {
+      openTemplateSelection();
+      return;
+    }
+
+    if (isPhpImport) {
+      const url = new URL(active.phpEndpoint);
+      url.searchParams.set("accion", "plantilla");
+      url.searchParams.set("sid_instituto", sidInstituto());
+      window.open(url.toString(), "_blank");
+      return;
+    }
+
     if (active.templateUrl) {
       window.open(active.templateUrl, "_blank");
       return;
@@ -105,6 +362,41 @@ export default function DataUpload({
     setLoading(true);
 
     try {
+      if (isPhpImport) {
+        const fd = new FormData();
+        fd.append("accion", "validar");
+        fd.append("sid_instituto", sidInstituto());
+        fd.append("datos_excel", file);
+
+        const res = await fetch(active.phpEndpoint, {
+          method: "POST",
+          body: fd,
+          credentials: "include",
+        });
+        const json = await res.json();
+
+        const row = {
+          id: json.import_id || `php-${Date.now()}`,
+          importId: json.import_id || null,
+          filename: file.name,
+          uploadedAt: new Date().toLocaleString(),
+          status: json.status === "ok" ? "VALIDADO" : "ERROR",
+          resumen: json.resumen || null,
+          errores: json.errores || [],
+          advertencias: json.advertencias || [],
+          msg: json.msg || "",
+        };
+
+        setHistory((h) => [row, ...h]);
+        setStep(json.status === "ok" ? 3 : 2);
+
+        if (json.status !== "ok") {
+          setValidationFeedback(row);
+        }
+
+        return;
+      }
+
       if (active.uploadUrl && !isTestMode) {
         const fd = new FormData();
         fd.append("file", file);
@@ -144,6 +436,16 @@ export default function DataUpload({
   // --- Validar archivo ---
   // Yo pido al backend que valide o simulo la validación. Actualizo el estado del historial.
   const handleValidate = async (rowId) => {
+    if (isPhpImport) {
+      const row = history.find((r) => r.id === rowId);
+      if (row?.status === "ERROR" && row.errores?.length) {
+        setValidationFeedback(row);
+        return;
+      }
+      alert("Este archivo ya se valido al subirlo.");
+      return;
+    }
+
     setLoading(true);
     try {
       if (active.validateUrl && !isTestMode) {
@@ -176,6 +478,46 @@ export default function DataUpload({
   const handleSave = async (rowId) => {
     setLoading(true);
     try {
+      if (isPhpImport) {
+        const row = history.find((r) => r.id === rowId);
+        if (!row?.importId) {
+          alert("Primero sube un archivo validado correctamente.");
+          return;
+        }
+
+        const res = await fetch(active.phpEndpoint, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            accion: "guardar",
+            sid_instituto: sidInstituto(),
+            id_usuario: idUsuario(),
+            import_id: row.importId,
+          }),
+        });
+        const json = await res.json();
+
+        if (json.status !== "ok") {
+          throw new Error(json.msg || "Error al guardar en BD");
+        }
+
+        setHistory((h) =>
+          h.map((r) =>
+            r.id === rowId
+              ? {
+                  ...r,
+                  status: "GUARDADO",
+                  resumenGuardado: json.resumen,
+                  msg: json.msg,
+                }
+              : r
+          )
+        );
+        alert(json.msg || "Datos guardados correctamente.");
+        return;
+      }
+
       if (active.saveUrl && !isTestMode) {
         const res = await fetch(`${active.saveUrl}?id=${rowId}`, {
           method: "POST",
@@ -344,6 +686,8 @@ export default function DataUpload({
               accept={
                 active && active.id === "fotos"
                   ? ".zip,.jpg,.jpeg,.png,.xlsx,.xls,.csv"
+                  : isPhpImport
+                  ? ".xlsx"
                   : ".xlsx,.xls,.csv"
               }
               onChange={(e) => setFile(e.target.files[0] || null)}
@@ -412,12 +756,39 @@ export default function DataUpload({
               {history.map((r) => (
                 <tr key={r.id}>
                   <td style={{ width: 170 }}>{r.uploadedAt}</td>
-                  <td>{r.filename}</td>
+                  <td>
+                    <div>{r.filename}</div>
+                    {r.resumen && (
+                      <small className="text-muted">
+                        Filas: {r.resumen.filas ?? 0}
+                        {r.resumen.padres ? ` | Padres: ${r.resumen.padres}` : ""}
+                        {r.resumen.alumnos ? ` | Alumnos: ${r.resumen.alumnos}` : ""}
+                        {r.resumen.asignaciones
+                          ? ` | Asignaciones: ${r.resumen.asignaciones}`
+                          : ""}
+                        {r.resumen.nuevas ? ` | Nuevas: ${r.resumen.nuevas}` : ""}
+                        {r.resumen.duplicados_existentes
+                          ? ` | Ya existentes: ${r.resumen.duplicados_existentes}`
+                          : ""}
+                        {r.resumen.errores ? ` | Errores: ${r.resumen.errores}` : ""}
+                      </small>
+                    )}
+                    {r.status === "ERROR" && r.errores?.length > 0 && (
+                      <div className="small text-danger mt-1">
+                        {r.errores
+                          .slice(0, 2)
+                          .map((e) => `Fila ${e.fila} ${e.columna}: ${e.mensaje}`)
+                          .join(" | ")}
+                      </div>
+                    )}
+                  </td>
                   <td>
                     <span
                       className={`badge ${
                         r.status === "GUARDADO"
                           ? "bg-success"
+                          : r.status === "ERROR"
+                          ? "bg-danger"
                           : r.status === "VALIDADO"
                           ? "bg-info"
                           : "bg-secondary"
@@ -447,7 +818,12 @@ export default function DataUpload({
                         className="btn btn-sm btn-outline-success"
                         style={{ padding: "5px 20px 0px", height: "40px" }}
                         onClick={() => handleSave(r.id)}
-                        disabled={loading || r.status === "GUARDADO"}
+                        disabled={
+                          loading ||
+                          r.status === "GUARDADO" ||
+                          r.status === "ERROR" ||
+                          (isPhpImport && !r.importId)
+                        }
                       >
                         <span style={{ position: "relative", top: "-3px" }}>
                           Guardar
@@ -545,6 +921,298 @@ export default function DataUpload({
                   <button
                     className="btn btn-secondary"
                     onClick={() => setShowReqModal(false)}
+                  >
+                    Cerrar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {templateSelectionOpen && (
+          <div
+            id="extracurricularTemplateModal"
+            className="modal show d-block"
+            tabIndex="-1"
+            role="dialog"
+            onClick={() => setTemplateSelectionOpen(false)}
+          >
+            <div
+              className="modal-dialog modal-lg"
+              role="document"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">
+                    {usesSchoolGroupSelection
+                      ? isCalificacionesImport
+                        ? "Parametros de calificaciones"
+                        : "Seleccionar grupos"
+                      : "Seleccionar extracurriculares"}
+                  </h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => setTemplateSelectionOpen(false)}
+                  ></button>
+                </div>
+                <div className="modal-body">
+                  <p className="text-muted mb-3">
+                    {usesSchoolGroupSelection
+                      ? isCalificacionesImport
+                        ? "Elige un salon y el numero de evaluaciones. La plantilla usara el ciclo en curso."
+                        : "Elige uno o varios salones. La plantilla incluira los alumnos de esos grupos y todos los atributos registrados."
+                      : "Elige las actividades que quieres incluir como columnas en la plantilla."}
+                  </p>
+
+                  {isCalificacionesImport && (
+                    <div className="alert alert-light border small">
+                      Ciclo en curso:{" "}
+                      <strong>{templateOptions?.ciclo?.nombre || "No disponible"}</strong>
+                    </div>
+                  )}
+
+                  {usesSchoolGroupSelection && (
+                    <div className="row mb-3">
+                      <div className="col-12 col-md-6 mb-2">
+                        <label className="form-label">Nivel</label>
+                        <select
+                          className="form-control"
+                          disabled={templateOptionsLoading}
+                          value={templateNivel}
+                          onChange={(event) => {
+                            setTemplateNivel(event.target.value);
+                            setTemplateGrado("");
+                            setTemplateGrupo("");
+                            setSelectedTemplateOptions([]);
+                            setPendingTemplateOption("");
+                          }}
+                        >
+                          <option value="">Selecciona nivel...</option>
+                          {nivelesTemplate.map((nivel) => (
+                            <option key={nivel.id_nivel} value={nivel.id_nivel}>
+                              {nivel.nombre}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="col-12 col-md-6 mb-2">
+                        <label className="form-label">Grado</label>
+                        <select
+                          className="form-control"
+                          disabled={templateOptionsLoading || !templateNivel}
+                          value={templateGrado}
+                          onChange={(event) => {
+                            setTemplateGrado(event.target.value);
+                            setTemplateGrupo("");
+                            setSelectedTemplateOptions([]);
+                            setPendingTemplateOption("");
+                          }}
+                        >
+                          <option value="">Selecciona grado...</option>
+                          {gradosTemplate.map((grado) => (
+                            <option key={grado.id_grado} value={grado.id_grado}>
+                              {grado.nombre}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {isCalificacionesImport && (
+                        <div className="col-12 col-md-6 mb-2">
+                          <label className="form-label">Numero de evaluaciones</label>
+                          <input
+                            type="number"
+                            min="1"
+                            step="1"
+                            className="form-control"
+                            value={templateNumeroEvaluaciones}
+                            onChange={(event) =>
+                              setTemplateNumeroEvaluaciones(event.target.value)
+                            }
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <label className="form-label">
+                    {usesSchoolGroupSelection ? "Grupo" : "Extracurriculares"}
+                  </label>
+                  <div className="d-flex gap-2 align-items-start">
+                    <div className="flex-grow-1">
+                      <select
+                        ref={templateSelectRef}
+                        className="form-control"
+                        disabled={
+                          templateOptionsLoading ||
+                          (usesSchoolGroupSelection && !templateGrado)
+                        }
+                        value={pendingTemplateOption}
+                        onChange={(event) =>
+                          setPendingTemplateOption(event.target.value)
+                        }
+                      >
+                        <option value="">Busca y selecciona...</option>
+                        {opcionesSelectTemplate
+                          .filter(
+                            (item) =>
+                              !selectedTemplateOptions.includes(
+                                usesSchoolGroupSelection
+                                  ? item.id_grupo
+                                  : item.id_extracurricular
+                              )
+                          )
+                          .map((item) => (
+                            <option
+                              key={usesSchoolGroupSelection ? item.id_grupo : item.id_extracurricular}
+                              value={usesSchoolGroupSelection ? item.id_grupo : item.id_extracurricular}
+                            >
+                              {item.nombre}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                    <button
+                      className="btn btn-outline-primary"
+                      onClick={addTemplateOption}
+                      disabled={templateOptionsLoading || !pendingTemplateOption}
+                    >
+                      {isCalificacionesImport ? "Seleccionar" : "Agregar"}
+                    </button>
+                  </div>
+
+                  {templateOptionsLoading && (
+                    <div className="text-muted small mt-2">Cargando opciones...</div>
+                  )}
+
+                  {!templateOptionsLoading && opcionesSelectTemplate.length === 0 && (
+                    <div className="text-danger small mt-2">
+                      {isSeguimientosImport
+                        ? "Selecciona nivel y grado para ver los grupos disponibles."
+                        : isCalificacionesImport
+                        ? "Selecciona nivel y grado para ver los grupos disponibles."
+                        : "No hay extracurriculares registradas para esta institucion."}
+                    </div>
+                  )}
+
+                  <div className="mt-4">
+                    <h6 className="mb-2">
+                      {usesSchoolGroupSelection ? "Grupo seleccionado" : "Extracurriculares seleccionadas"}
+                    </h6>
+                    {selectedTemplateOptions.length === 0 ? (
+                      <div className="text-muted small">
+                        {usesSchoolGroupSelection
+                          ? "Todavia no has agregado grupo."
+                          : "Todavia no has agregado extracurriculares."}
+                      </div>
+                    ) : (
+                      <div className="d-flex flex-wrap gap-2">
+                        {selectedTemplateOptions.map((id) => (
+                          <span
+                            key={id}
+                            className="badge bg-primary d-inline-flex align-items-center gap-2"
+                            style={{ fontSize: 13, padding: "8px 10px" }}
+                          >
+                            {getTemplateOptionName(id)}
+                            <button
+                              type="button"
+                              className="btn-close btn-close-white"
+                              aria-label="Quitar"
+                              style={{ fontSize: 10 }}
+                              onClick={() => removeTemplateOption(id)}
+                            ></button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button
+                    className="btn btn-outline-secondary"
+                    onClick={() => setTemplateSelectionOpen(false)}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    className="btn btn-primary"
+                    onClick={downloadSelectedTemplate}
+                    disabled={
+                      templateOptionsLoading ||
+                      !selectedTemplateOptions.length ||
+                      (isCalificacionesImport &&
+                        (!templateOptions?.ciclo ||
+                          !hasValidTemplateNumeroEvaluaciones))
+                    }
+                  >
+                    Descargar plantilla
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {validationFeedback && (
+          <div
+            className="modal show d-block"
+            tabIndex="-1"
+            role="dialog"
+            onClick={() => setValidationFeedback(null)}
+          >
+            <div
+              className="modal-dialog modal-lg"
+              role="document"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Errores de validacion</h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => setValidationFeedback(null)}
+                  ></button>
+                </div>
+                <div className="modal-body">
+                  <p className="text-muted mb-3">
+                    Corrige estas celdas en el Excel y vuelve a subir el archivo.
+                  </p>
+
+                  <div className="table-responsive">
+                    <table className="table table-sm align-middle">
+                      <thead className="table-light">
+                        <tr>
+                          <th>Celda</th>
+                          <th>Valor</th>
+                          <th>Error</th>
+                          <th>Como corregirlo</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(validationFeedback.errores || []).map((error, idx) => (
+                          <tr key={idx}>
+                            <td>
+                              {error.fila ? `Fila ${error.fila}` : "Archivo"}
+                              {error.columna ? `, ${error.columna}` : ""}
+                            </td>
+                            <td>{error.valor || "-"}</td>
+                            <td>{error.mensaje}</td>
+                            <td>{error.correccion || "Revisa la plantilla y corrige el dato."}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => setValidationFeedback(null)}
                   >
                     Cerrar
                   </button>

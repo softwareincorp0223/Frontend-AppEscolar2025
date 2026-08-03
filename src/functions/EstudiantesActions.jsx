@@ -20,6 +20,9 @@ export const obtenerAlumnos = async (setAlumnos) => {
     const alumnosApi = await InstitutoData(
       "alumno/activos?sid_instituto=",
     );
+    console.log("alumnosApi");
+    console.log(alumnosApi);
+    
     const formateados = alumnosApi.map((data) => ({
       ...data,
       Nivel: data.Nivel?.nombre || "Sin Nivel",

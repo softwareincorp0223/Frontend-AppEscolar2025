@@ -8,17 +8,10 @@ export default function CargarDatos() {
     {
       id: "alumnos",
       label: "Padres y Alumnos",
-      uploadUrl: "/api/upload/alumnos",
-      validateUrl: "/api/validate/alumnos",
-      saveUrl: "/api/save/alumnos",
-      historyUrl: "/api/history/alumnos",
-      templateUrl: "/plantillas/plantilla_alumnos.xlsx",
+      phpEndpoint: "http://localhost/apiAppEscolarv2/padres_alumnos_import.php",
       requirementsText:
-        "Plantilla para alumnos: columnas: nombre, apellido, expediente, nivel, grado, grupo.",
-      requirementsImages: [
-        "/plantillas/previews/plantilla_alumnos_1.png",
-        "/plantillas/previews/plantilla_alumnos_2.png",
-      ],
+        "Plantilla para padres y alumnos: captura una fila por alumno y usa la misma clave_familia para hermanos o alumnos del mismo padre/tutor. Nivel, grado y grupo deben escribirse igual que en los catálogos del sistema.",
+      requirementsImages: [],
     },
     {
       id: "fotos",
@@ -37,47 +30,26 @@ export default function CargarDatos() {
     {
       id: "extracurriculares",
       label: "Extracurriculares",
-      uploadUrl: "/api/upload/extracurriculares",
-      validateUrl: "/api/validate/extracurriculares",
-      saveUrl: "/api/save/extracurriculares",
-      historyUrl: "/api/history/extracurriculares",
-      templateUrl: "/plantillas/plantilla_extracurriculares.xlsx",
+      phpEndpoint: "http://localhost/apiAppEscolarv2/extracurriculares_import.php",
       requirementsText:
-        "Plantilla para extracurriculares: columnas: nombre, apellido, expediente, nivel, grado, grupo.",
-      requirementsImages: [
-        "/plantillas/previews/plantilla_extracurriculares_1.png",
-        "/plantillas/previews/plantilla_extracurriculares_2.png",
-      ],
+        "Plantilla para extracurriculares: cada fila es una matrícula y cada columna es una extracurricular. Marca con X o x la actividad que se asignará; deja la celda vacía si no aplica.",
+      requirementsImages: [],
     },
     {
       id: "seguimientos",
       label: "Seguimientos",
-      uploadUrl: "/api/upload/seguimientos",
-      validateUrl: "/api/validate/seguimientos",
-      saveUrl: "/api/save/seguimientos",
-      historyUrl: "/api/history/seguimientos",
-      templateUrl: "/plantillas/plantilla_seguimientos.xlsx",
+      phpEndpoint: "http://localhost/apiAppEscolarv2/seguimientos_import.php",
       requirementsText:
-        "Plantilla para seguimientos: columnas: nombre, apellido, expediente, nivel, grado, grupo.",
-      requirementsImages: [
-        "/plantillas/previews/plantilla_seguimientos_1.png",
-        "/plantillas/previews/plantilla_seguimientos_2.png",
-      ],
+        "Plantilla para seguimientos: selecciona uno o varios grupos, descarga el Excel, llena observacion y/o atributos. Para dejar una celda como vacia puedes usar 0, -, N/A o dejarla en blanco.",
+      requirementsImages: [],
     },
     {
       id: "calificaciones",
       label: "Calificaciones",
-      uploadUrl: "/api/upload/calificaciones",
-      validateUrl: "/api/validate/calificaciones",
-      saveUrl: "/api/save/calificaciones",
-      historyUrl: "/api/history/calificaciones",
-      templateUrl: "/plantillas/plantilla_calificaciones.xlsx",
+      phpEndpoint: "http://localhost/apiAppEscolarv2/calificaciones_import.php",
       requirementsText:
-        "Plantilla para calificaciones: columnas: nombre, apellido, expediente, nivel, grado, grupo.",
-      requirementsImages: [
-        "/plantillas/previews/plantilla_calificaciones_1.png",
-        "/plantillas/previews/plantilla_calificaciones_2.png",
-      ],
+        "Plantilla para calificaciones: selecciona nivel, grado, grupo y numero de evaluaciones. El Excel usa el ciclo en curso; llena todas las calificaciones, incluso con 0 cuando corresponda.",
+      requirementsImages: [],
     },
   ];
 
