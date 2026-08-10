@@ -14,16 +14,17 @@ import {
 import { exportarExcel } from "../../functions/general/exportarExcel";
 import { exportarPDF } from "../../functions/general/ExportarPDF";
 import PadreDetails from "../../components/details/PadresDetails";
-import DetailsContainer from "../../functions/general/DetailsContainer";
+import Modal from "../../components/Modal";
 
 export default function Padres() {
   const [padres, setPadres] = useState([]);
   const [editing, setEditing] = useState(null);
   const [deleteCheck, setDeleteCheck] = useState([]);
   const [selectedPadre, setSelectedPadre] = useState(null);
+  const [loadingPadres, setLoadingPadres] = useState(true);
 
   useEffect(() => {
-    obtenerPadres(setPadres);
+    obtenerPadres(setPadres).finally(() => setLoadingPadres(false));
   }, []);
 
   const columns = [
@@ -98,6 +99,7 @@ export default function Padres() {
             columns={columns}
             data={padres}
             showCheckbox={true}
+            loading={loadingPadres}
             renderActions={(row) => (
               <ActionButtons
                 row={row}
@@ -119,12 +121,18 @@ export default function Padres() {
             onSelectionChange={(ids) => setDeleteCheck(ids)}
           />
 
-          <DetailsContainer visible={!!selectedPadre}>
-            <PadreDetails
-              padre={selectedPadre}
-              onClose={() => setSelectedPadre(null)}
-            />
-          </DetailsContainer>
+          <Modal
+            isOpen={!!selectedPadre}
+            title="Detalle del padre"
+            onClose={() => setSelectedPadre(null)}
+          >
+            {selectedPadre && (
+              <PadreDetails
+                padre={selectedPadre}
+                onClose={() => setSelectedPadre(null)}
+              />
+            )}
+          </Modal>
         </>
       </div>
     </Layout>

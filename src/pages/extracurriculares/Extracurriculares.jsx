@@ -7,7 +7,6 @@ import TableButtons from "../../components/TableButtons";
 import ExtracurricularDetails from "../../components/details/ExtracurricularDetails";
 import { obtenerExtracurricular, handleDelete, handleSave, obtenerExtracurricularesExcel } from "../../functions/ExtracurricularActions";
 import { exportarExcel } from "../../functions/general/exportarExcel";
-import DetailsContainer from "../../functions/general/DetailsContainer";
 import Modal from "../../components/Modal";
 
 
@@ -16,9 +15,10 @@ export default function Extracurriculares() {
   const [extracurricularesExcel, setExtracurricularesExcel] = useState([]);
   const [editingExtracurricular, setEditingExtracurricular] = useState(null);
   const [selectedExtra, setSelectedExtra] = useState(null);
+  const [loadingExtracurriculares, setLoadingExtracurriculares] = useState(true);
 
   useEffect(() => {
-    obtenerExtracurricular(setExtracurriculares);
+    obtenerExtracurricular(setExtracurriculares).finally(() => setLoadingExtracurriculares(false));
     obtenerExtracurricularesExcel(setExtracurricularesExcel);
   }, []);
 
@@ -60,6 +60,7 @@ export default function Extracurriculares() {
         title="Extracurricular"
         columns={columnsExtracurricular}
         data={extracurriculares}
+        loading={loadingExtracurriculares}
         renderActions={(row) => (
           <ActionButtons
             row={row}
@@ -88,14 +89,6 @@ export default function Extracurriculares() {
           />
         )}
       </Modal>
-      {/* 
-      <DetailsContainer visible={!!selectedExtra} top={650}>
-        <ExtracurricularDetails
-          alumno={selectedExtra}
-          onClose={() => setSelectedExtra(null)}
-        />
-      </DetailsContainer> */}
-
     </Layout>
   );
 }

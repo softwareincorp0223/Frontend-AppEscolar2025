@@ -55,6 +55,30 @@ export async function login(correo, contrasena) {
   }
 }
 
+export async function resetPassword(correo) {
+  try {
+    const res = await axios.post(
+      `${AUTH_URL}/restaurar-contrasena`,
+      { correo },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    return res.data;
+  } catch (error) {
+    if (error.response) {
+      throw new Error(error.response.data?.error || "Error en el servidor");
+    } else if (error.request) {
+      throw new Error("Error de conexion con el servidor (CORS o red)");
+    } else {
+      throw new Error("Error desconocido");
+    }
+  }
+}
+
 export function getUser() {
   const user = localStorage.getItem("user");
   return user ? JSON.parse(user) : null;

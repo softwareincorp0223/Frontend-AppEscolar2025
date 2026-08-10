@@ -94,13 +94,7 @@ export const menuItems = [
     icon: "create_new_folder",
     link: "/src/pages/cargar-datos/index.html",
     permission: "cargar_datos",
-  },
-  {
-    label: "Pagos",
-    icon: "credit_card",
-    link: "/src/pages/pagos/index.html",
-    permission: "pagos",
-  },
+  }
 ];
 
 export const findPermissionByPath = (path: string): string | null => {

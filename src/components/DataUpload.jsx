@@ -1,9 +1,15 @@
 import React, { useEffect, useRef, useState } from "react";
 import $ from "jquery";
 import "select2/dist/css/select2.css";
+import Modal from "./Modal";
+import { showAlert } from "../functions/general/Alerts";
 
 window.$ = window.$ || $;
 window.jQuery = window.jQuery || $;
+
+const TEST_MODE_STORAGE_KEY = "dataUploadTestMode";
+const HISTORY_LIMIT = 10;
+const API_URL = "http://localhost:4000/api/";
 
 /**
  * DataUpload
@@ -32,7 +38,12 @@ export default function DataUpload({
   );
 
   // Modo "test" controlado desde la UI (valor inicial viene del prop simulate)
-  const [isTestMode, setIsTestMode] = useState(Boolean(simulate));
+  const [isTestMode, setIsTestMode] = useState(() => {
+    const saved = localStorage.getItem(TEST_MODE_STORAGE_KEY);
+    if (saved === "true") return true;
+    if (saved === "false") return false;
+    return Boolean(simulate);
+  });
 
   const [file, setFile] = useState(null);
   const [step, setStep] = useState(1); // 1 = subir, 2 = validar, 3 = guardar
@@ -54,6 +65,13 @@ export default function DataUpload({
 
   // Obtengo el módulo activo a partir del id seleccionado
   const active = modules.find((m) => m.id === selectedModuleId) || {};
+  const activeRequirements = active.requirements || {};
+  const requirementSteps = activeRequirements.descripcion
+    ? Object.entries(activeRequirements.descripcion)
+    : [];
+  const requirementImages = activeRequirements.imagenes
+    ? Object.entries(activeRequirements.imagenes)
+    : [];
   const isPhpImport = Boolean(active.phpEndpoint);
   const usesTemplateSelection =
     (active.id === "extracurriculares" ||
@@ -63,8 +81,81 @@ export default function DataUpload({
   const isSeguimientosImport = active.id === "seguimientos" && isPhpImport;
   const isCalificacionesImport = active.id === "calificaciones" && isPhpImport;
   const usesSchoolGroupSelection = isSeguimientosImport || isCalificacionesImport;
+  const hasCalificacionesGroupSelected =
+    isCalificacionesImport && selectedTemplateOptions.length > 0;
   const sidInstituto = () => localStorage.getItem("sid_instituto") || "";
-  const idUsuario = () => localStorage.getItem("id_usuario") || "";
+  const idUsuario = () => {
+    const storedId = localStorage.getItem("id_usuario");
+    if (storedId) return storedId;
+    try {
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      return user.id || user.id_usuario || "";
+    } catch (err) {
+      console.error("Error leyendo usuario de localStorage:", err);
+      return "";
+    }
+  };
+  const limitHistory = (rows) => (Array.isArray(rows) ? rows.slice(0, HISTORY_LIMIT) : []);
+  const formatHistoryDate = (value) => {
+    if (!value) return "";
+    const [datePart] = String(value).split("T");
+    const parts = datePart.split("-");
+    if (parts.length !== 3) return value;
+    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+  };
+  const getDbDate = () => {
+    const now = new Date();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${now.getFullYear()}-${month}-${day}`;
+  };
+  const generateHistoryId = () => {
+    const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+    let id = "";
+    for (let i = 0; i < 10; i += 1) {
+      id += chars[Math.floor(Math.random() * chars.length)];
+    }
+    return id;
+  };
+
+  const authHeaders = () => {
+    const token = localStorage.getItem("token");
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
+  const registerSavedFile = async (row) => {
+    const payload = {
+      archivos_exportar_id: generateHistoryId(),
+      nombre_archivo: row.filename,
+      fecha_subida: getDbDate(),
+      estado: "GUARDADO",
+      modulo: active.historyModule || active.id,
+      usuario_sid: idUsuario() || "sistema",
+    };
+
+    const res = await fetch(`${API_URL}archivos_exportar`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...authHeaders(),
+      },
+      credentials: "include",
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      let message = "No se pudo registrar el archivo en historial.";
+      try {
+        const json = await res.json();
+        message = json.message || json.error || message;
+      } catch (err) {
+        console.error("Error leyendo respuesta de historial:", err);
+      }
+      throw new Error(message);
+    }
+
+    return payload;
+  };
 
   // Si cambian los módulos desde props y no hay ninguno seleccionado, elijo el primero
   useEffect(() => {
@@ -80,6 +171,10 @@ export default function DataUpload({
       setSelectedModuleId(modules[0].id);
     }
   }, [modules]);
+
+  useEffect(() => {
+    localStorage.setItem(TEST_MODE_STORAGE_KEY, String(isTestMode));
+  }, [isTestMode]);
 
   // Cada vez que cambia el módulo seleccionado refresco el historial y reseteo selección
   useEffect(() => {
@@ -158,7 +253,35 @@ export default function DataUpload({
   // Yo intento traer el historial del endpoint si existe y no estoy en modo test.
   const fetchHistory = async () => {
     if (isPhpImport) {
-      setHistory([]);
+      try {
+        const historyModules = active.historyModules || [active.historyModule || active.id || ""];
+        const params = new URLSearchParams({
+          where: JSON.stringify({ modulo: { $in: historyModules } }),
+          order: "fecha_subida",
+          direction: "DESC",
+        });
+        const res = await fetch(`${API_URL}archivos_exportar?${params.toString()}`, {
+          headers: authHeaders(),
+          credentials: "include",
+        });
+        const json = await res.json();
+        setHistory(
+          limitHistory(
+            (Array.isArray(json) ? json : []).sort(
+              (a, b) => new Date(b.fecha_subida) - new Date(a.fecha_subida)
+            )
+          ).map((row) => ({
+            id: row.archivos_exportar_id,
+            filename: row.nombre_archivo,
+            uploadedAt: formatHistoryDate(row.fecha_subida),
+            status: row.estado,
+            importId: null,
+          }))
+        );
+      } catch (err) {
+        console.error("Error fetching history:", err);
+        setHistory([]);
+      }
       return;
     }
 
@@ -166,22 +289,14 @@ export default function DataUpload({
       try {
         const res = await fetch(active.historyUrl);
         const json = await res.json();
-        setHistory(Array.isArray(json) ? json : []);
+        setHistory(limitHistory(json));
       } catch (err) {
         console.error("Error fetching history:", err);
         setHistory([]);
       }
     } else {
       // Simulación: creo algunos items de ejemplo sin eliminar los reales que pueda tener
-      setHistory((prev) => [
-        {
-          id: `sim-${selectedModuleId}-1`,
-          filename: `${selectedModuleId}_archivo_20240424.xlsx`,
-          uploadedAt: "2024-04-24",
-          status: "GUARDADO",
-        },
-        ...prev.filter((r) => r.id && !String(r.id).startsWith("sim-")),
-      ]);
+      setHistory([]);
     }
   };
 
@@ -216,7 +331,7 @@ export default function DataUpload({
       setTemplateOptions(usesSchoolGroupSelection ? json.data || {} : Array.isArray(json.data) ? json.data : []);
     } catch (err) {
       console.error(err);
-      alert(usesSchoolGroupSelection ? "Error al cargar los grupos." : "Error al cargar las extracurriculares.");
+      showAlert("error", usesSchoolGroupSelection ? "Error al cargar los grupos." : "Error al cargar las extracurriculares.");
       setTemplateSelectionOpen(false);
     } finally {
       setTemplateOptionsLoading(false);
@@ -248,7 +363,7 @@ export default function DataUpload({
 
   const addTemplateOption = () => {
     if (!pendingTemplateOption) {
-      alert(usesSchoolGroupSelection ? "Selecciona un grupo para agregar." : "Selecciona una extracurricular para agregar.");
+      showAlert("error", usesSchoolGroupSelection ? "Selecciona un grupo para agregar." : "Selecciona una extracurricular para agregar.");
       return;
     }
 
@@ -274,6 +389,9 @@ export default function DataUpload({
 
   const removeTemplateOption = (id) => {
     setSelectedTemplateOptions((prev) => prev.filter((item) => item !== id));
+    if (isCalificacionesImport && templateGrupo === id) {
+      setTemplateGrupo("");
+    }
   };
 
   const getTemplateOptionName = (id) => {
@@ -298,11 +416,11 @@ export default function DataUpload({
     if (isCalificacionesImport) {
       const numeroEvaluaciones = Number(templateNumeroEvaluaciones);
       if (!templateNivel || !templateGrado || !templateGrupo) {
-        alert("Selecciona nivel, grado y grupo.");
+        showAlert("error", "Selecciona nivel, grado y grupo.");
         return;
       }
       if (!Number.isInteger(numeroEvaluaciones) || numeroEvaluaciones < 1) {
-        alert("Indica un numero de evaluaciones valido.");
+        showAlert("error", "Indica un numero de evaluaciones valido.");
         return;
       }
 
@@ -319,7 +437,7 @@ export default function DataUpload({
     }
 
     if (!currentSelection.length) {
-      alert(isSeguimientosImport ? "Selecciona al menos un grupo." : "Selecciona al menos una extracurricular.");
+      showAlert("error", isSeguimientosImport ? "Selecciona al menos un grupo." : "Selecciona al menos una extracurricular.");
       return;
     }
 
@@ -352,13 +470,16 @@ export default function DataUpload({
       window.open(active.templateUrl, "_blank");
       return;
     }
-    alert("No hay plantilla configurada para este módulo.");
+    showAlert("error", "No hay plantilla configurada para este modulo.");
   };
 
   // --- Subir archivo ---
   // Yo envío el archivo al endpoint si existe y no estoy en modo test; en test creo entrada simulada.
   const handleUpload = async () => {
-    if (!file) return alert("Selecciona un archivo primero.");
+    if (!file) {
+      showAlert("error", "Selecciona un archivo primero.");
+      return;
+    }
     setLoading(true);
 
     try {
@@ -387,7 +508,7 @@ export default function DataUpload({
           msg: json.msg || "",
         };
 
-        setHistory((h) => [row, ...h]);
+        setHistory((h) => limitHistory([row, ...h]));
         setStep(json.status === "ok" ? 3 : 2);
 
         if (json.status !== "ok") {
@@ -409,7 +530,7 @@ export default function DataUpload({
           status: json.status || "EN_VALIDACION",
           fileUrl: json.fileUrl || null,
         };
-        setHistory((h) => [row, ...h]);
+        setHistory((h) => limitHistory([row, ...h]));
         setStep(2);
       } else {
         // Simulación
@@ -419,13 +540,13 @@ export default function DataUpload({
           uploadedAt: new Date().toLocaleString(),
           status: "EN_VALIDACION",
         };
-        setHistory((h) => [row, ...h]);
+        setHistory((h) => limitHistory([row, ...h]));
         // avanzo visualmente al paso de validación
         setTimeout(() => setStep(2), 600);
       }
     } catch (err) {
       console.error(err);
-      alert("Error al subir el archivo.");
+      showAlert("error", "Error al subir el archivo.");
     } finally {
       setLoading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -442,7 +563,7 @@ export default function DataUpload({
         setValidationFeedback(row);
         return;
       }
-      alert("Este archivo ya se valido al subirlo.");
+      showAlert("info", "Este archivo ya se valido al subirlo.");
       return;
     }
 
@@ -467,7 +588,7 @@ export default function DataUpload({
       setStep(3);
     } catch (err) {
       console.error(err);
-      alert("Error en la validación");
+      showAlert("error", "Error en la validacion");
     } finally {
       setLoading(false);
     }
@@ -481,7 +602,7 @@ export default function DataUpload({
       if (isPhpImport) {
         const row = history.find((r) => r.id === rowId);
         if (!row?.importId) {
-          alert("Primero sube un archivo validado correctamente.");
+          showAlert("error", "Primero sube un archivo validado correctamente.");
           return;
         }
 
@@ -502,6 +623,18 @@ export default function DataUpload({
           throw new Error(json.msg || "Error al guardar en BD");
         }
 
+        try {
+          await registerSavedFile(row);
+          await fetchHistory();
+        } catch (historyErr) {
+          console.error(historyErr);
+          showAlert(
+            "error",
+            historyErr.message || "Los datos se guardaron, pero no se pudo registrar el archivo."
+          );
+          return;
+        }
+
         setHistory((h) =>
           h.map((r) =>
             r.id === rowId
@@ -514,7 +647,7 @@ export default function DataUpload({
               : r
           )
         );
-        alert(json.msg || "Datos guardados correctamente.");
+        showAlert("success", json.msg || "Datos guardados correctamente.");
         return;
       }
 
@@ -536,7 +669,7 @@ export default function DataUpload({
       }
     } catch (err) {
       console.error(err);
-      alert("Error al guardar en BD");
+      showAlert("error", "Error al guardar en BD");
     } finally {
       setLoading(false);
     }
@@ -544,8 +677,9 @@ export default function DataUpload({
 
   // --- Eliminar historial ---
   // Yo pregunto confirmación y remuevo el registro localmente.
-  const handleDeleteHistory = (id) => {
-    if (!confirm("Eliminar el registro de carga?")) return;
+  const handleDeleteHistory = async (id) => {
+    const result = await showAlert("delete", "Eliminar el registro de carga?");
+    if (!result?.isConfirmed) return;
     setHistory((h) => h.filter((r) => r.id !== id));
   };
 
@@ -555,7 +689,7 @@ export default function DataUpload({
       window.open(r.fileUrl, "_blank");
       return;
     }
-    alert("No hay archivo disponible para descargar/ver.");
+    showAlert("error", "No hay archivo disponible para descargar/ver.");
   };
 
   return (
@@ -617,7 +751,7 @@ export default function DataUpload({
                 info
               </span>
               <span style={{ position: "relative", top: "-6px" }}>
-                Requerimientos de archivo
+                Como subir datos
               </span>
             </button>
 
@@ -682,6 +816,7 @@ export default function DataUpload({
             <label className="form-label small d-block">Archivo Excel</label>
             <input
               ref={fileInputRef}
+              id="dataUploadFileInput"
               type="file"
               accept={
                 active && active.id === "fotos"
@@ -691,8 +826,21 @@ export default function DataUpload({
                   : ".xlsx,.xls,.csv"
               }
               onChange={(e) => setFile(e.target.files[0] || null)}
-              className="form-control"
+              className="d-none"
             />
+            <label
+              htmlFor="dataUploadFileInput"
+              className="d-flex align-items-center justify-content-between gap-3 border border-primary rounded px-3 py-3 bg-light"
+              style={{ cursor: "pointer", minHeight: 58 }}
+            >
+              <span className="d-flex align-items-center p-0 text-primary fw-semibold">
+                <span className="material-icons">upload_file</span>
+                Seleccionar archivo
+              </span>
+              <span className="text-muted text-truncate">
+                {file ? file.name : "Ningun archivo seleccionado"}
+              </span>
+            </label>
             <div className="form-text">
               Selecciona el archivo que quieres subir para{" "}
               <strong>{active.label}</strong>.
@@ -849,6 +997,56 @@ export default function DataUpload({
 
         {/* Modal Requerimientos: ahora es un POPUP con texto e imágenes explicativas (si el módulo las provee) */}
         {showReqModal && (
+          <Modal
+            isOpen={showReqModal}
+            title={`Como subir datos - ${activeRequirements.titulo || active.label || ""}`}
+            size="lg"
+            onClose={() => setShowReqModal(false)}
+          >
+            <div>
+              <div className="d-flex align-items-center gap-2 mb-3">
+                <span className="material-icons text-primary">
+                  {activeRequirements.icono || "info"}
+                </span>
+                <h6 className="mb-0">{activeRequirements.titulo || active.label}</h6>
+              </div>
+
+              {requirementSteps.length > 0 ? (
+                <ol className="ps-3 mb-4">
+                  {requirementSteps.map(([key, text]) => (
+                    <li key={key} className="mb-2">
+                      {text}
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <p className="mb-0">No hay instrucciones configuradas para este modulo.</p>
+              )}
+
+              {requirementImages.length > 0 && (
+                <div className="row">
+                  {requirementImages.map(([key, src], idx) => (
+                    <div key={key} className="col-12 col-md-6 mb-3">
+                      <div className="border rounded p-2 h-100">
+                        <img
+                          src={src}
+                          alt={`${activeRequirements.titulo || active.label} ${key}`}
+                          style={{ width: "100%", objectFit: "contain" }}
+                        />
+                        <div className="small text-muted mt-2">
+                          Imagen {idx + 1}: coloca este archivo en {src}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+          </Modal>
+        )}
+
+        {false && showReqModal && (
           <div
             className="modal show d-block"
             tabIndex="-1"
@@ -936,7 +1134,12 @@ export default function DataUpload({
             className="modal show d-block"
             tabIndex="-1"
             role="dialog"
-            onClick={() => setTemplateSelectionOpen(false)}
+            onClick={(event) => {
+              if (isCalificacionesImport) return;
+              if (event.target === event.currentTarget) {
+                setTemplateSelectionOpen(false);
+              }
+            }}
           >
             <div
               className="modal-dialog modal-lg"
@@ -976,17 +1179,19 @@ export default function DataUpload({
 
                   {usesSchoolGroupSelection && (
                     <div className="row mb-3">
-                      <div className="col-12 col-md-6 mb-2">
+                      <div className={isCalificacionesImport ? "col-12 col-md-4 mb-2" : "col-12 col-md-6 mb-2"}>
                         <label className="form-label">Nivel</label>
                         <select
                           className="form-control"
-                          disabled={templateOptionsLoading}
+                          disabled={templateOptionsLoading || hasCalificacionesGroupSelected}
                           value={templateNivel}
                           onChange={(event) => {
                             setTemplateNivel(event.target.value);
                             setTemplateGrado("");
                             setTemplateGrupo("");
-                            setSelectedTemplateOptions([]);
+                            if (isCalificacionesImport) {
+                              setSelectedTemplateOptions([]);
+                            }
                             setPendingTemplateOption("");
                           }}
                         >
@@ -999,16 +1204,22 @@ export default function DataUpload({
                         </select>
                       </div>
 
-                      <div className="col-12 col-md-6 mb-2">
+                      <div className={isCalificacionesImport ? "col-12 col-md-4 mb-2" : "col-12 col-md-6 mb-2"}>
                         <label className="form-label">Grado</label>
                         <select
                           className="form-control"
-                          disabled={templateOptionsLoading || !templateNivel}
+                          disabled={
+                            templateOptionsLoading ||
+                            !templateNivel ||
+                            hasCalificacionesGroupSelected
+                          }
                           value={templateGrado}
                           onChange={(event) => {
                             setTemplateGrado(event.target.value);
                             setTemplateGrupo("");
-                            setSelectedTemplateOptions([]);
+                            if (isCalificacionesImport) {
+                              setSelectedTemplateOptions([]);
+                            }
                             setPendingTemplateOption("");
                           }}
                         >
@@ -1022,68 +1233,115 @@ export default function DataUpload({
                       </div>
 
                       {isCalificacionesImport && (
-                        <div className="col-12 col-md-6 mb-2">
-                          <label className="form-label">Numero de evaluaciones</label>
-                          <input
-                            type="number"
-                            min="1"
-                            step="1"
+                        <div className="col-12 col-md-4 mb-2">
+                          <label className="form-label">Grupo</label>
+                          <select
+                            ref={templateSelectRef}
                             className="form-control"
-                            value={templateNumeroEvaluaciones}
-                            onChange={(event) =>
-                              setTemplateNumeroEvaluaciones(event.target.value)
+                            disabled={
+                              templateOptionsLoading ||
+                              !templateGrado ||
+                              hasCalificacionesGroupSelected
                             }
-                          />
+                            value={pendingTemplateOption}
+                            onChange={(event) =>
+                              setPendingTemplateOption(event.target.value)
+                            }
+                          >
+                            <option value="">Busca y selecciona...</option>
+                            {opcionesSelectTemplate
+                              .filter((item) => !selectedTemplateOptions.includes(item.id_grupo))
+                              .map((item) => (
+                                <option key={item.id_grupo} value={item.id_grupo}>
+                                  {item.nombre}
+                                </option>
+                              ))}
+                          </select>
                         </div>
                       )}
                     </div>
                   )}
 
-                  <label className="form-label">
-                    {usesSchoolGroupSelection ? "Grupo" : "Extracurriculares"}
-                  </label>
-                  <div className="d-flex gap-2 align-items-start">
-                    <div className="flex-grow-1">
-                      <select
-                        ref={templateSelectRef}
-                        className="form-control"
-                        disabled={
-                          templateOptionsLoading ||
-                          (usesSchoolGroupSelection && !templateGrado)
-                        }
-                        value={pendingTemplateOption}
-                        onChange={(event) =>
-                          setPendingTemplateOption(event.target.value)
-                        }
-                      >
-                        <option value="">Busca y selecciona...</option>
-                        {opcionesSelectTemplate
-                          .filter(
-                            (item) =>
-                              !selectedTemplateOptions.includes(
-                                usesSchoolGroupSelection
-                                  ? item.id_grupo
-                                  : item.id_extracurricular
+                  {!isCalificacionesImport && (
+                    <>
+                      <label className="form-label">
+                        {usesSchoolGroupSelection ? "Grupo" : "Extracurriculares"}
+                      </label>
+                      <div className="d-flex gap-2 align-items-start">
+                        <div className="flex-grow-1">
+                          <select
+                            ref={templateSelectRef}
+                            className="form-control"
+                            disabled={
+                              templateOptionsLoading ||
+                              (usesSchoolGroupSelection && !templateGrado)
+                            }
+                            value={pendingTemplateOption}
+                            onChange={(event) =>
+                              setPendingTemplateOption(event.target.value)
+                            }
+                          >
+                            <option value="">Busca y selecciona...</option>
+                            {opcionesSelectTemplate
+                              .filter(
+                                (item) =>
+                                  !selectedTemplateOptions.includes(
+                                    usesSchoolGroupSelection
+                                      ? item.id_grupo
+                                      : item.id_extracurricular
+                                  )
                               )
-                          )
-                          .map((item) => (
-                            <option
-                              key={usesSchoolGroupSelection ? item.id_grupo : item.id_extracurricular}
-                              value={usesSchoolGroupSelection ? item.id_grupo : item.id_extracurricular}
-                            >
-                              {item.nombre}
-                            </option>
-                          ))}
-                      </select>
+                              .map((item) => (
+                                <option
+                                  key={usesSchoolGroupSelection ? item.id_grupo : item.id_extracurricular}
+                                  value={usesSchoolGroupSelection ? item.id_grupo : item.id_extracurricular}
+                                >
+                                  {item.nombre}
+                                </option>
+                              ))}
+                          </select>
+                        </div>
+                        <button
+                          className="btn btn-outline-primary"
+                          onClick={addTemplateOption}
+                          disabled={templateOptionsLoading || !pendingTemplateOption}
+                        >
+                          Agregar
+                        </button>
+                      </div>
+                    </>
+                  )}
+
+                  {isCalificacionesImport && (
+                    <div className="row mt-3 align-items-end">
+                      <div className="col-12 col-md-6 mb-2">
+                        <label className="form-label">Numero de evaluaciones</label>
+                        <input
+                          type="number"
+                          min="1"
+                          step="1"
+                          className="form-control"
+                          value={templateNumeroEvaluaciones}
+                          onChange={(event) =>
+                            setTemplateNumeroEvaluaciones(event.target.value)
+                          }
+                        />
+                      </div>
+                      <div className="col-12 col-md-6 mb-2">
+                        <button
+                          className="btn btn-outline-primary w-100"
+                          onClick={addTemplateOption}
+                          disabled={
+                            templateOptionsLoading ||
+                            !pendingTemplateOption ||
+                            hasCalificacionesGroupSelected
+                          }
+                        >
+                          Seleccionar
+                        </button>
+                      </div>
                     </div>
-                    <button
-                      className="btn btn-outline-primary"
-                      onClick={addTemplateOption}
-                      disabled={templateOptionsLoading || !pendingTemplateOption}
-                    >
-                      {isCalificacionesImport ? "Seleccionar" : "Agregar"}
-                    </button>
-                  </div>
+                  )}
 
                   {templateOptionsLoading && (
                     <div className="text-muted small mt-2">Cargando opciones...</div>

@@ -11,6 +11,7 @@ import { filtrarTabla } from "../../functions/general/Functions";
 export default function MensajeRegistro() {
   const [registros, setRegistros] = useState([]);
   const [registrosOriginal, setRegistrosOriginal] = useState([]);
+  const [loadingRegistros, setLoadingRegistros] = useState(true);
 
   const manejarCambioFiltros = (f) => {
     const resultado = filtrarTabla({
@@ -25,7 +26,7 @@ export default function MensajeRegistro() {
     obtenerRegistroMensajes((res) => {
       setRegistrosOriginal(res);
       setRegistros(res);
-    });
+    }).finally(() => setLoadingRegistros(false));
   }, []);
 
   const columns = [
@@ -71,6 +72,7 @@ export default function MensajeRegistro() {
               title="Registro"
               columns={columns}
               data={registros}
+              loading={loadingRegistros}
               renderActions={(row) => (
                 <ActionButtons 
                 row={row} 

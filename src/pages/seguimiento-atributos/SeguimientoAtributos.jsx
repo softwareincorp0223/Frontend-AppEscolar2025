@@ -5,6 +5,29 @@ import Form from "../../components/Form";
 import ActionButtons from "../../components/ActionButtons";
 import { obtenerAtributos, handleDelete, handleSave } from "../../functions/AtributosActions";
 
+const STICKERS_BASE_URL = "https://ik.imagekit.io/2fqivufug/stickers";
+const STICKER_FILES = [
+  "001.svg",
+  "002.svg",
+  "003.svg",
+  "004.svg",
+  "005.svg",
+  "006.svg",
+  "007.svg",
+  "008.svg",
+  "009.svg",
+  "010.svg",
+  "011.svg",
+  "012.svg",
+  "013.svg",
+  "014.svg",
+  "015.svg",
+  "016.svg",
+  "017.svg",
+  "018.svg",
+  "019.svg",
+];
+
 export default function SeguimientosAtributos() {
   const [atributos, setAtributos] = useState([]);
   const [editingAtributo, setEditingAtributo] = useState(null);
@@ -13,14 +36,12 @@ export default function SeguimientosAtributos() {
     obtenerAtributos(setAtributos);
   }, []);
 
-  const images = import.meta.glob("../../assets/sticker/*.svg", {
-    eager: true,
-    import: "default",
-  });
+  const stickerUrl = (fileName) => `${STICKERS_BASE_URL}/${fileName}`;
 
   const getIconUrl = (icono) => {
-    const path = `../../assets/sticker/${icono}`;
-    return images[path] || "";
+    if (!icono) return "";
+    if (/^https?:\/\//i.test(icono)) return icono;
+    return stickerUrl(icono);
   };
 
   const dataConImagen = atributos.map((item) => ({
@@ -28,12 +49,12 @@ export default function SeguimientosAtributos() {
     icono_url: getIconUrl(item.icono),
   }));
 
-  const stickerOptions = Object.keys(images).map((path) => {
-    const fileName = path.split("/").pop(); // 001.svg
+  const stickerOptions = STICKER_FILES.map((fileName) => {
+    const url = stickerUrl(fileName);
     return {
-      value: fileName,
+      value: url,
       label: fileName,
-      image: images[path],
+      image: url,
     };
   });
 

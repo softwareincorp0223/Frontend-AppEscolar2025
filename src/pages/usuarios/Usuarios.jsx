@@ -4,6 +4,7 @@ import Table from "../../components/Table";
 import Form from "../../components/Form";
 import ActionButtons from "../../components/ActionButtons";
 import UserDetails from "../../components/details/UserDetails";
+import Modal from "../../components/Modal";
 import {
   obtenerUsuarios,
   obtenerRoles,
@@ -16,9 +17,10 @@ export default function Usuarios() {
   const [roles, setRoles] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [editingUser, setEditingUser] = useState(null);
+  const [loadingUsuarios, setLoadingUsuarios] = useState(true);
 
   useEffect(() => {
-    obtenerUsuarios(setUsuarios);
+    obtenerUsuarios(setUsuarios).finally(() => setLoadingUsuarios(false));
     obtenerRoles(setRoles);
     console.log(usuarios);
   }, []);
@@ -99,6 +101,7 @@ export default function Usuarios() {
           title="Usuarios"
           columns={columns}
           data={usuarios}
+          loading={loadingUsuarios}
           renderActions={(row) => (
             <ActionButtons
               row={row}
@@ -112,12 +115,18 @@ export default function Usuarios() {
           )}
         />
 
-        {selectedUser && (
-          <UserDetails
-            user={selectedUser}
-            onClose={() => setSelectedUser(null)}
-          />
-        )}
+        <Modal
+          isOpen={!!selectedUser}
+          title="Detalle del usuario"
+          onClose={() => setSelectedUser(null)}
+        >
+          {selectedUser && (
+            <UserDetails
+              user={selectedUser}
+              onClose={() => setSelectedUser(null)}
+            />
+          )}
+        </Modal>
       </>
     </Layout>
   );

@@ -6,9 +6,12 @@ import { obtenerMensajesHistorial} from "../../functions/MensajeTipoActions";
 
 export default function MensajeHistorial() {
   const [historialMensaje, setHistorialMensajes] = useState([]);
+  const [loadingHistorial, setLoadingHistorial] = useState(true);
 
   useEffect(() => {
-    obtenerMensajesHistorial(setHistorialMensajes);
+    obtenerMensajesHistorial(setHistorialMensajes).finally(() =>
+      setLoadingHistorial(false),
+    );
   }, []);
 
   const columnsHistorialMensaje = [
@@ -26,6 +29,7 @@ export default function MensajeHistorial() {
         title="Historial de Mensajes"
         columns={columnsHistorialMensaje}
         data={historialMensaje}
+        loading={loadingHistorial}
       />
     </Layout>
   );

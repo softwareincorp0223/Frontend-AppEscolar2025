@@ -120,7 +120,7 @@ export const generarPdfCalificacion = async (row) => {
   try {
 
     const response = await InstitutoDataFilter(
-      `evaluacion/pdf/${row.id_alumno}`
+      `evaluacion/pdf/${row.id_alumno}?ciclo=${encodeURIComponent(row.ciclo || "")}`
     );
 
     if (!response || response.length === 0) {

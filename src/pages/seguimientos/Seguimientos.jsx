@@ -7,7 +7,6 @@ import { obtenerSeguimientos, handleDelete, handleDeleteVarios } from "../../fun
 import SeguimientoDetails from "../../components/details/SeguimientosDetails";
 import { exportarExcel } from "../../functions/general/exportarExcel";
 import { obtenerAsignarAtributosExcel } from "../../functions/AsignarAtributoActions";
-import DetailsContainer from "../../functions/general/DetailsContainer";
 import Modal from "../../components/Modal";
 
 
@@ -16,10 +15,11 @@ export default function Seguimientos() {
   const [selectedExtra, setSelectedExtra] = useState(null);
   const [asignarAtributoExcel, setAsignarAtributoExcel] = useState({});
   const [deleteCheck, setDeleteCheck] = useState([]);
+  const [loadingSeguimientos, setLoadingSeguimientos] = useState(true);
 
 
   useEffect(() => {
-    obtenerSeguimientos(setSeguimientos);
+    obtenerSeguimientos(setSeguimientos).finally(() => setLoadingSeguimientos(false));
     obtenerAsignarAtributosExcel(setAsignarAtributoExcel)
   }, []);
 
@@ -62,6 +62,7 @@ export default function Seguimientos() {
         columns={columnsSeguimientos}
         data={seguimientos}
         showCheckbox={true}
+        loading={loadingSeguimientos}
         renderActions={
           (row) => (
             <ActionButtons
@@ -93,13 +94,6 @@ export default function Seguimientos() {
           />
         )}
       </Modal>
-
-      {/* <DetailsContainer visible={!!selectedExtra} top={650}>
-        <SeguimientoDetails
-          alumno={selectedExtra}
-          onClose={() => setSelectedExtra(null)}
-        />
-      </DetailsContainer> */}
     </Layout>
   );
 }

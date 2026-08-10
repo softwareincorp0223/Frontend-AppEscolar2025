@@ -19,7 +19,7 @@ import { obtenerGradosPorNivel } from "../../functions/GradosActions";
 import { obtenerGruposPorGrados } from "../../functions/GruposActions";
 import { obtenerPadres } from "../../functions/PadresActions";
 import { exportarExcel } from "../../functions/general/exportarExcel";
-import DetailsContainer from "../../functions/general/DetailsContainer";
+import Modal from "../../components/Modal";
 
 export default function Estudiantes() {
   const [alumnos, setAlumnos] = useState([]);
@@ -27,6 +27,7 @@ export default function Estudiantes() {
   const [selectedEstudiante, setSelectedEstudiante] = useState(null);
   const [deleteCheck, setDeleteCheck] = useState([]);
   const [editing, setEditing] = useState(null);
+  const [loadingAlumnos, setLoadingAlumnos] = useState(true);
 
   const [niveles, setNiveles] = useState([]);
   const [grados, setGrados] = useState([]);
@@ -43,7 +44,7 @@ export default function Estudiantes() {
     obtenerAlumnos((res) => {
       setAlumnosOriginal(res);
       setAlumnos(res);
-    });
+    }).finally(() => setLoadingAlumnos(false));
     obtenerNiveles(setNiveles);
     obtenerPadres(setPadres);
   }, []);
@@ -259,6 +260,7 @@ export default function Estudiantes() {
           columns={columns}
           data={alumnos}
           showCheckbox
+          loading={loadingAlumnos}
           renderActions={(row) => (
             <ActionButtons
               row={row}
@@ -278,12 +280,18 @@ export default function Estudiantes() {
           onSelectionChange={(ids) => setDeleteCheck(ids)}
         />
 
-        <DetailsContainer visible={!!selectedEstudiante}>
-          <EstudianteDetails
-            estudiante={selectedEstudiante}
-            onClose={() => setSelectedEstudiante(null)}
-          />
-        </DetailsContainer>
+        <Modal
+          isOpen={!!selectedEstudiante}
+          title="Detalle del estudiante"
+          onClose={() => setSelectedEstudiante(null)}
+        >
+          {selectedEstudiante && (
+            <EstudianteDetails
+              estudiante={selectedEstudiante}
+              onClose={() => setSelectedEstudiante(null)}
+            />
+          )}
+        </Modal>
       </div>
     </Layout>
   );

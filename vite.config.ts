@@ -13,6 +13,8 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
+        login: resolve(__dirname, 'index.html'),
+        recuperarPassword: resolve(__dirname, 'src/pages/recuperar-password/index.html'),
         home: resolve(__dirname, 'src/pages/home/index.html'),
         materias: resolve(__dirname, 'src/pages/materias/index.html'),
       }

@@ -5,6 +5,7 @@ import $ from "jquery";
 import "datatables.net-bs5";
 import { createRoot } from "react-dom/client";
 import "../index.css";
+import Loader from "../functions/general/Loader";
 
 export default function Table({
   id,
@@ -15,6 +16,7 @@ export default function Table({
   headerButtons,
   showCheckbox = false,
   onSelectionChange,
+  loading = false,
 }) {
   const tableRef = useRef(null);
   const dtRef = useRef(null);
@@ -180,7 +182,15 @@ export default function Table({
           </div>
         </div>
 
-        <div className="table-responsive">
+        <div className="table-responsive position-relative" style={{ minHeight: loading ? 240 : undefined }}>
+          {loading && (
+            <div
+              className="position-absolute top-0 start-0 w-100 h-100 bg-white bg-opacity-75 d-flex align-items-center justify-content-center"
+              style={{ zIndex: 2 }}
+            >
+              <Loader title="Cargando datos..." titleClass="fs-6" />
+            </div>
+          )}
           <table
             ref={tableRef}
             id={id}

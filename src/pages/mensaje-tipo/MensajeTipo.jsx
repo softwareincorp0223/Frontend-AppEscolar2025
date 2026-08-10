@@ -9,6 +9,30 @@ import {
   handleSave,
 } from "../../functions/MensajeTipoActions";
 
+const TIPO_MENSAJE_BASE_URL = "https://ik.imagekit.io/2fqivufug/tipo_mensaje";
+const TIPO_MENSAJE_FILES = [
+  "001.svg",
+  "002.svg",
+  "003.svg",
+  "004.svg",
+  "005.svg",
+  "006.svg",
+  "007.svg",
+  "008.svg",
+  "009.svg",
+  "010.svg",
+  "011.svg",
+  "012.svg",
+  "013.svg",
+  "014.svg",
+  "015.svg",
+  "016.svg",
+  "017.svg",
+  "018.svg",
+  "019.svg",
+  "020.svg",
+];
+
 export default function TipoMensajes() {
   const [tipoMensaje, setTipoMensajes] = useState([]);
   const [editingTipoMensaje, setEditingTipoMensaje] = useState(null);
@@ -17,14 +41,12 @@ export default function TipoMensajes() {
     obtenerTipoMensajes(setTipoMensajes);
   }, []);
 
-  const images = import.meta.glob("../../assets/Tipo mensaje/*.svg", {
-    eager: true,
-    import: "default",
-  });
+  const iconUrl = (fileName) => `${TIPO_MENSAJE_BASE_URL}/${fileName}`;
 
   const getIconUrl = (icono) => {
-    const path = `../../assets/Tipo mensaje/${icono}`;
-    return images[path] || "";
+    if (!icono) return "";
+    if (/^https?:\/\//i.test(icono)) return icono;
+    return iconUrl(icono);
   };
 
   const dataConImagen = tipoMensaje.map((item) => ({
@@ -32,13 +54,12 @@ export default function TipoMensajes() {
     icono_url: getIconUrl(item.icono),
   }));
 
-  const iconOptions = Object.keys(images).map((path) => {
-    const fileName = path.split("/").pop();
-
+  const iconOptions = TIPO_MENSAJE_FILES.map((fileName) => {
+    const url = iconUrl(fileName);
     return {
-      value: fileName,
+      value: url,
       label: fileName,
-      image: images[path],
+      image: url,
     };
   });
 

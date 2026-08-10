@@ -37,6 +37,7 @@ export default function Mensaje() {
   const [extracurriculares, setExtracurriculares] = useState([]);
   const [selectedMensaje, setSelectedMensaje] = useState(null);
   const [deleteCheck, setDeleteCheck] = useState([]);
+  const [loadingMensajes, setLoadingMensajes] = useState(true);
 
   const [nivelSeleccionado, setNivelSeleccionado] = useState(null);
   const [gradoSeleccionado, setGradoSeleccionado] = useState(null);
@@ -75,7 +76,7 @@ export default function Mensaje() {
     obtenerMensajes((res) => {
       setMensajesOriginal(res);
       setMensajes(res);
-    });
+    }).finally(() => setLoadingMensajes(false));
     obtenerMensajesExcel(setMensajesExcel);
     obtenerNiveles(setNiveles);
     obtenerTipoMensajes(setMensajesTipo);
@@ -186,6 +187,7 @@ export default function Mensaje() {
               columns={columns}
               data={mensajes}
               showCheckbox={true}
+              loading={loadingMensajes}
               renderActions={(row) => (
                 <ActionButtons
                   row={row}

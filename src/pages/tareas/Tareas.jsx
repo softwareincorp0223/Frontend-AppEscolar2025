@@ -11,13 +11,14 @@ import { obtenerGradosPorNivel } from "../../functions/GradosActions";
 import { obtenerGruposPorGrados } from "../../functions/GruposActions";
 import { exportarExcel } from "../../functions/general/ExportarExcel";
 import TareasDetails from "../../components/details/TareasDetails";
-import DetailsContainer from "../../functions/general/DetailsContainer";
+import Modal from "../../components/Modal";
 
 export default function Tareas() {
   const [tareas, setTareas] = useState([]);
   const [tareasOriginal, setTareasOriginal] = useState([]);
   const [deleteCheck, setDeleteCheck] = useState([]);
   const [selectedTarea, setSelectedTarea] = useState(null);
+  const [loadingTareas, setLoadingTareas] = useState(true);
 
   const [niveles, setNiveles] = useState([]);
   const [grados, setGrados] = useState([]);
@@ -60,7 +61,7 @@ export default function Tareas() {
     obtenerTareas((res) => {
       setTareasOriginal(res);
       setTareas(res);
-    });
+    }).finally(() => setLoadingTareas(false));
   }, []);
 
   const columns = [
@@ -128,6 +129,7 @@ export default function Tareas() {
               columns={columns}
               data={tareas}
               showCheckbox={true}
+              loading={loadingTareas}
               renderActions={(row) => (
                 <ActionButtons
                   row={row}
@@ -148,12 +150,18 @@ export default function Tareas() {
               onSelectionChange={(ids) => setDeleteCheck(ids)}
             />
 
-            <DetailsContainer visible={!!selectedTarea} top={650}>
-              <TareasDetails
-                tarea={selectedTarea}
-                onClose={() => setSelectedTarea(null)}
-              />
-            </DetailsContainer>
+            <Modal
+              isOpen={!!selectedTarea}
+              title="Detalle de la tarea"
+              onClose={() => setSelectedTarea(null)}
+            >
+              {selectedTarea && (
+                <TareasDetails
+                  tarea={selectedTarea}
+                  onClose={() => setSelectedTarea(null)}
+                />
+              )}
+            </Modal>
           </div>
         </div>
       </div>
