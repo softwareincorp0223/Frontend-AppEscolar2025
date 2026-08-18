@@ -6,7 +6,8 @@ import ActionButtons from "../../components/ActionButtons";
 import TableButtons from "../../components/TableButtons";
 import ExtracurricularDetails from "../../components/details/ExtracurricularDetails";
 import { obtenerExtracurricular, handleDelete, handleSave, obtenerExtracurricularesExcel } from "../../functions/ExtracurricularActions";
-import { exportarExcel } from "../../functions/general/exportarExcel";
+import { exportarExcel } from "../../functions/general/ExportarExcel";
+import DetailsContainer from "../../functions/general/DetailsContainer";
 import Modal from "../../components/Modal";
 
 

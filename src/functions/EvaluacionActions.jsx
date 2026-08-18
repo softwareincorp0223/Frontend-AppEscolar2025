@@ -129,7 +129,8 @@ export const generarPdfCalificacion = async (row) => {
     }
 
     const alumno = response[0];
-
+    
+    console.log(alumno.Evaluacions)
     await ExportarPDFCalificacion(
       `Calificaciones_${alumno.matricula}`,
       alumno,

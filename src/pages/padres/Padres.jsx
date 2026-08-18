@@ -11,7 +11,7 @@ import {
   handleSave,
   handleDeleteVarios,
 } from "../../functions/PadresActions";
-import { exportarExcel } from "../../functions/general/exportarExcel";
+import { exportarExcel } from "../../functions/general/ExportarExcel";
 import { exportarPDF } from "../../functions/general/ExportarPDF";
 import PadreDetails from "../../components/details/PadresDetails";
 import Modal from "../../components/Modal";

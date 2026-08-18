@@ -3,7 +3,7 @@ import {
   InstitutoData,
   InstitutoDataFilter,
 } from "../functions/general/DataActions";
-import { showAlert } from "../functions/General/Alerts";
+import { showAlert } from "../functions/general/Alerts";
 
 export default function Filter({
   enabledFilters = [],

@@ -5,7 +5,7 @@ import ActionButtons from "../../components/ActionButtons";
 import TableButtons from "../../components/TableButtons";
 import { obtenerSeguimientos, handleDelete, handleDeleteVarios } from "../../functions/SeguimientosActions";
 import SeguimientoDetails from "../../components/details/SeguimientosDetails";
-import { exportarExcel } from "../../functions/general/exportarExcel";
+import { exportarExcel } from "../../functions/general/ExportarExcel";
 import { obtenerAsignarAtributosExcel } from "../../functions/AsignarAtributoActions";
 import Modal from "../../components/Modal";
 
