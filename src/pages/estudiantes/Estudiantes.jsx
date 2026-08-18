@@ -18,7 +18,7 @@ import { obtenerNiveles } from "../../functions/NivelesActions";
 import { obtenerGradosPorNivel } from "../../functions/GradosActions";
 import { obtenerGruposPorGrados } from "../../functions/GruposActions";
 import { obtenerPadres } from "../../functions/PadresActions";
-import { exportarExcel } from "../../functions/general/exportarExcel";
+import { exportarExcel } from "../../functions/general/ExportarExcel";
 import DetailsContainer from "../../functions/general/DetailsContainer";
 
 export default function Estudiantes() {

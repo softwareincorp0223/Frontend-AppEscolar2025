@@ -5,7 +5,7 @@ import Form from "../../components/Form";
 import ActionButtons from "../../components/ActionButtons";
 import TableButtons from "../../components/TableButtons";
 import { obtenerEvaluacion, handleDelete, obtenerCalificacionesExcel, handleDeleteVarios, generarPdfCalificacion } from "../../functions/EvaluacionActions";
-import { exportarExcel } from "../../functions/general/exportarExcel";
+import { exportarExcel } from "../../functions/general/ExportarExcel";
 
 
 export default function Calificaciones() {
