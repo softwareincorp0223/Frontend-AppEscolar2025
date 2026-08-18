@@ -78,54 +78,59 @@ export default function MateriasAsignacion() {
       obtenerGruposPorGrados(grado, setGrupos);
     });
   }, [editingAsignaMaterias]);
-  const formAsignarMateria = [
-    {
-      name: "profesor",
-      label: "Seleccione  Profesor",
-      type: "select",
-      required: true,
-      options: usuarios.map((u) => ({ value: u.id_usuario, label: u.nombre })),
-    },
-    {
-      name: "materia",
-      label: "Seleccione  Materia",
-      type: "select",
-      required: true,
-      options: materias.map((m) => ({ value: m.id_materia, label: m.nombre })),
-    },
-    {
-      name: "Nivel",
-      label: "Nivel",
-      type: "select",
-      options: niveles.map((r) => ({
-        value: r.id_nivel,
-        label: r.nombre,
-      })),
-      required: false,
-      onChange: (e) => setNivelSeleccionado(e.target.value),
-    },
-    {
-      name: "Grado",
-      label: "Grado",
-      type: "select",
-      options: grados.map((g) => ({
-        value: g.id_grado,
-        label: g.nombre,
-      })),
-      required: false,
-      onChange: (e) => setGradoSeleccionado(e.target.value),
-    },
-    {
-      name: "Grupo",
-      label: "Grupo",
-      type: "select",
-      options: grupos.map((g) => ({
-        value: g.id_grupo,
-        label: g.nombre,
-      })),
-      required: false,
-    },
-  ];
+  const formAsignarMateria = useMemo(
+    () => [
+      {
+        name: "profesor",
+        label: "Seleccione  Profesor",
+        type: "select",
+        select2: true,
+        required: true,
+        options: usuarios.map((u) => ({ value: u.id_usuario, label: u.nombre })),
+      },
+      {
+        name: "materia",
+        label: "Seleccione  Materia",
+        type: "select",
+        select2: true,
+        required: true,
+        options: materias.map((m) => ({ value: m.id_materia, label: m.nombre })),
+      },
+      {
+        name: "Nivel",
+        label: "Nivel",
+        type: "select",
+        options: niveles.map((r) => ({
+          value: r.id_nivel,
+          label: r.nombre,
+        })),
+        required: false,
+        onChange: (e) => setNivelSeleccionado(e.target.value),
+      },
+      {
+        name: "Grado",
+        label: "Grado",
+        type: "select",
+        options: grados.map((g) => ({
+          value: g.id_grado,
+          label: g.nombre,
+        })),
+        required: false,
+        onChange: (e) => setGradoSeleccionado(e.target.value),
+      },
+      {
+        name: "Grupo",
+        label: "Grupo",
+        type: "select",
+        options: grupos.map((g) => ({
+          value: g.id_grupo,
+          label: g.nombre,
+        })),
+        required: false,
+      },
+    ],
+    [usuarios, materias, niveles, grados, grupos],
+  );
 
   const columnsMateriasAsignadas = [
     { label: "Nivel - Grado - Grupo", key: "nivelGradoGrupo" },

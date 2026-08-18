@@ -26,17 +26,16 @@ const formatMultilineMessage = (message) => {
 export function showAlert(type, message = "") {
   switch (type) {
     case "success":
-      Swal.fire({
+      return Swal.fire({
         icon: "success",
-        title: "Exito",
+        title: "Listo",
         text: message || "Operacion exitosa",
         confirmButtonColor: "#0399fd",
       });
-      break;
 
     case "error": {
       const formattedError = formatMultilineMessage(message);
-      Swal.fire({
+      return Swal.fire({
         icon: "error",
         title: "Error",
         ...(formattedError
@@ -44,7 +43,6 @@ export function showAlert(type, message = "") {
           : { text: message || "Ocurrio un error" }),
         confirmButtonColor: "#ef4444",
       });
-      break;
     }
 
     case "info":
@@ -81,12 +79,11 @@ export function showAlert(type, message = "") {
       });
 
     default:
-      Swal.fire({
+      return Swal.fire({
         icon: "question",
         title: "Aviso",
         text: message || "Accion no definida",
         confirmButtonColor: "#0399fd",
       });
-      break;
   }
 }

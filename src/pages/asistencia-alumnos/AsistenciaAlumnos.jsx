@@ -5,8 +5,11 @@ import TableButtons from "../../components/TableButtons";
 import ActionButtons from "../../components/ActionButtons";
 import Filter from "../../components/Filter";
 import { filtrarTabla } from "../../functions/general/Functions";
-import { obtenerAlumnos, descargarQRsAlumnos } from "../../functions/EstudiantesActions";
-import { descargarQR } from "../../functions/general/Functions";
+import {
+  obtenerAlumnos,
+  descargarQRsAlumnos,
+  descargarQRAlumno,
+} from "../../functions/EstudiantesActions";
 
 export default function AsistenciaAlumnos() {
   const [alumnos, setAlumnos] = useState([]);
@@ -72,8 +75,7 @@ export default function AsistenciaAlumnos() {
                       label: "Descargar QR",
                       icon: "qr_code",
                       className: "btn-outline-dark",
-                      onClick: (row) =>
-                        descargarQR(row.id_alumno, row.codigo_qr),
+                      onClick: (row) => descargarQRAlumno(row),
                     },
                   ]}
                 />

@@ -1,8 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import $ from "jquery";
+import select2Factory from "select2";
+import "select2/dist/css/select2.min.css";
 import CustomSelect from "../../CustomSelect";
 
 import ReactQuill from "react-quill-new";
 import "quill/dist/quill.snow.css";
+
+select2Factory(window, $);
 
 export default function MensajeForm({
   mensajesTipo,
@@ -15,14 +20,19 @@ export default function MensajeForm({
   obtenerGruposPorGrados,
   onSubmit,
 }) {
-  const initialFormData = {
-    receptor: "0",
-    sid_tipo: "0",
+  const receptorInitialValues = {
     sid_estudiante: "0",
+    sid_estudiantes: [],
     sid_nivel: "0",
     sid_grado: "0",
     sid_grupo: "0",
     sid_extracurricular: "0",
+  };
+
+  const initialFormData = {
+    receptor: "0",
+    sid_tipo: "0",
+    ...receptorInitialValues,
     asunto_mensaje: "",
     mensaje: "",
     respuesta_rapida_mensaje: false,
@@ -38,6 +48,13 @@ export default function MensajeForm({
 
   const [formData, setFormData] = useState(initialFormData);
   const [fileKey, setFileKey] = useState(0);
+  const alumnosSeleccionados = useMemo(() => {
+    const seleccionados = new Set(formData.sid_estudiantes || []);
+
+    return alumnos.filter((alumno) =>
+      seleccionados.has(String(alumno.id_alumno)),
+    );
+  }, [alumnos, formData.sid_estudiantes]);
 
   const modules = {
     toolbar: [
@@ -69,16 +86,137 @@ export default function MensajeForm({
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === "checkbox" ? checked : value,
+
+    setFormData((prev) => {
+      if (name === "programado_mensaje" && !checked) {
+        return {
+          ...prev,
+          programado_mensaje: false,
+          fecha_envio_mensaje: "",
+          hora_envio_mensaje: "",
+        };
+      }
+
+      if (name === "repetir_mensaje" && !checked) {
+        return {
+          ...prev,
+          repetir_mensaje: false,
+          periodo_mensaje: "",
+          fecha_fin_mensaje: "",
+        };
+      }
+
+      return {
+        ...prev,
+        [name]: type === "checkbox" ? checked : value,
+      };
     });
+  };
+
+  const handleReceptorChange = (event) => {
+    const { value } = event.target;
+
+    setFormData((prev) => ({
+      ...prev,
+      ...receptorInitialValues,
+      receptor: value,
+    }));
+  };
+
+  const getAlumnoLabel = (alumno) =>
+    `${alumno.nombre || ""} ${alumno.apellido || ""}`.trim() ||
+    alumno.nombre ||
+    "Sin nombre";
+
+  const agregarAlumnoSeleccionado = (idAlumno) => {
+    if (!idAlumno || idAlumno === "0") return;
+
+    setFormData((prev) => {
+      const seleccionados = prev.sid_estudiantes || [];
+
+      if (seleccionados.includes(String(idAlumno))) {
+        return { ...prev, sid_estudiante: "0" };
+      }
+
+      return {
+        ...prev,
+        sid_estudiante: "0",
+        sid_estudiantes: [...seleccionados, String(idAlumno)],
+      };
+    });
+  };
+
+  const eliminarAlumnoSeleccionado = (idAlumno) => {
+    setFormData((prev) => ({
+      ...prev,
+      sid_estudiantes: (prev.sid_estudiantes || []).filter(
+        (id) => id !== String(idAlumno),
+      ),
+    }));
   };
 
   const resetForm = () => {
     setFormData(initialFormData);
     setFileKey((prev) => prev + 1);
   };
+
+  useEffect(() => {
+    const select = $(".mensaje-alumno-unico-select2");
+
+    if (!select.length) return undefined;
+
+    if (select.data("select2")) {
+      select.select2("destroy");
+    }
+
+    select.select2({
+      width: "100%",
+      placeholder: "Selecciona estudiante",
+      allowClear: false,
+    });
+
+    select.on("change.mensaje-alumno-unico-select2", (event) => {
+      setFormData((prev) => ({
+        ...prev,
+        sid_estudiante: event.target.value,
+      }));
+    });
+
+    return () => {
+      select.off("change.mensaje-alumno-unico-select2");
+      if (select.data("select2")) {
+        select.select2("destroy");
+      }
+    };
+  }, [alumnos, formData.receptor]);
+
+  useEffect(() => {
+    const select = $(".mensaje-alumnos-multiple-select2");
+
+    if (!select.length) return undefined;
+
+    if (select.data("select2")) {
+      select.select2("destroy");
+    }
+
+    select.select2({
+      width: "100%",
+      placeholder: "Selecciona estudiante",
+      allowClear: false,
+    });
+
+    select.on("change.mensaje-alumnos-multiple-select2", (event) => {
+      agregarAlumnoSeleccionado(event.target.value);
+      $(event.target).val("0").trigger("change.select2");
+    });
+
+    return () => {
+      select.off("change.mensaje-alumnos-multiple-select2");
+      if (select.data("select2")) {
+        select.select2("destroy");
+      }
+    };
+  }, [alumnos, formData.receptor, formData.sid_estudiantes]);
 
   // URLs
   const addUrlField = () => {
@@ -130,21 +268,70 @@ export default function MensajeForm({
     }
   };
 
+  const renderAlumnoUnicoSelect2 = (label) => (
+    <div className="mt-3">
+      <label>{label}</label>
+      <select
+        name="sid_estudiante"
+        value={formData.sid_estudiante}
+        onChange={handleChange}
+        className="form-control mensaje-alumno-unico-select2"
+      >
+        <option value="0">Selecciona estudiante</option>
+        {alumnos.map((alumno) => (
+          <option key={alumno.id_alumno} value={alumno.id_alumno}>
+            {getAlumnoLabel(alumno)}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+
+  const renderAlumnosMultipleSelect2 = (label) => (
+    <div className="mt-3">
+      <label>{label}</label>
+      <select
+        name="sid_estudiante"
+        value={formData.sid_estudiante}
+        onChange={(event) => {
+          agregarAlumnoSeleccionado(event.target.value);
+        }}
+        className="form-control mensaje-alumnos-multiple-select2"
+      >
+        <option value="0">Selecciona estudiante</option>
+        {alumnos.map((alumno) => (
+          <option key={alumno.id_alumno} value={alumno.id_alumno}>
+            {getAlumnoLabel(alumno)}
+          </option>
+        ))}
+      </select>
+
+      {alumnosSeleccionados.length > 0 && (
+        <div className="d-flex flex-wrap gap-2 mt-2">
+          {alumnosSeleccionados.map((alumno) => (
+            <span
+              key={alumno.id_alumno}
+              className="badge bg-primary d-inline-flex align-items-center gap-2"
+            >
+              {getAlumnoLabel(alumno)}
+              <button
+                type="button"
+                className="btn-close btn-close-white"
+                aria-label={`Quitar ${getAlumnoLabel(alumno)}`}
+                style={{ fontSize: "0.65rem" }}
+                onClick={() => eliminarAlumnoSeleccionado(alumno.id_alumno)}
+              />
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
   const renderReceptorFields = () => {
     switch (formData.receptor) {
       case "1": // Varios Estudiantes
-        return (
-          <CustomSelect
-            label="Estudiantes"
-            name="sid_estudiante"
-            value={formData.sid_estudiante}
-            onChange={handleChange}
-            options={alumnos}
-            optionValue="id_alumno"
-            optionLabel="nombre"
-            placeholder="Selecciona estudiante"
-          />
-        );
+        return renderAlumnoUnicoSelect2("Estudiante");
 
       case "2": // Nivel → Grado → Grupo
         return (
@@ -202,18 +389,7 @@ export default function MensajeForm({
         );
 
       case "4": // Específico
-        return (
-          <CustomSelect
-            label="Estudiante específico"
-            name="sid_estudiante"
-            value={formData.sid_estudiante}
-            onChange={handleChange}
-            options={alumnos}
-            optionValue="id_alumno"
-            optionLabel="nombre"
-            placeholder="Selecciona estudiante"
-          />
-        );
+        return renderAlumnosMultipleSelect2("Estudiantes específicos");
 
       case "5": // Extracurricular
         return (
@@ -247,7 +423,7 @@ export default function MensajeForm({
             <select
               name="receptor"
               value={formData.receptor}
-              onChange={handleChange}
+              onChange={handleReceptorChange}
               className="form-control"
             >
               <option value="0">Selecciona una opción</option>

@@ -11,6 +11,45 @@ import {
 import { mapReceptor } from "./general/Functions";
 import { compressImage } from "./general/ImageCompresor";
 
+const TRUE_VALUES = ["si", "sí", "1", 1, true, "true"];
+
+const MAX_FILE_SIZE_MB = 5;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+
+const isTruthyValue = (value) =>
+  TRUE_VALUES.includes(
+    typeof value === "string" ? value.trim().toLowerCase() : value,
+  );
+
+const boolToDb = (value) => (isTruthyValue(value) ? "si" : "no");
+
+const hasSelectedValue = (value) =>
+  value !== undefined && value !== null && value !== "" && value !== "0";
+
+const getSelectedStudentIds = (values) => {
+  const ids = values.sid_estudiantes?.length
+    ? values.sid_estudiantes
+    : [values.sid_estudiante];
+
+  return [...new Set(ids.map(String).filter(hasSelectedValue))];
+};
+
+const getArchivosValidos = (values) =>
+  (values.archivos || []).filter((file) => file instanceof File);
+
+const validarArchivosMensaje = (values) => {
+  const archivos = getArchivosValidos(values);
+  const archivoPesado = archivos.find((file) => file.size > MAX_FILE_SIZE_BYTES);
+
+  if (archivoPesado) {
+    throw new Error(
+      `El archivo "${archivoPesado.name}" pesa más de ${MAX_FILE_SIZE_MB} MB.`,
+    );
+  }
+
+  return archivos;
+};
+
 export const obtenerMensajes = async (setMensajes) => {
   try {
     const sid_instituto = localStorage.getItem("sid_instituto");
@@ -65,10 +104,13 @@ export const obtenerMensaje = async (mensaje_id, setMensaje) => {
       "archivo_mensaje?sid_mensaje=" + mensaje_id,
     );
 
+    const urls = alumnoUrls.filter((item) => (item.url || "").trim());
+    const archivos = alumnoArchivos.filter((item) => (item.url || "").trim());
+
     const formateados = mensajesApi.map((data) => ({
       ...data,
-      urls: alumnoUrls,
-      archivos: alumnoArchivos,
+      urls,
+      archivos,
     }));
 
     console.log("formateados");
@@ -158,28 +200,17 @@ export const handleDeleteVarios = async (ids, setMensajes) => {
   }
 };
 
-const asignarAlumnosMensaje = async (
-  sid_mensaje,
-  receptor,
-  values,
-  sid_instituto,
-) => {
-  let alumnos = [];
-
+const obtenerAlumnosPorReceptor = async (receptor, values, sid_instituto) => {
   switch (Number(receptor)) {
     // ESTUDIANTE
     case 1:
-      alumnos = [
-        {
-          sid_alumno: values.sid_estudiante,
-        },
-      ];
-
-      break;
+      return getSelectedStudentIds(values).map((sidAlumno) => ({
+        sid_alumno: sidAlumno,
+      }));
 
     // NIVEL / GRADO / GRUPO
     case 2: {
-      const filtros = [];
+      const filtros = [`sid_instituto=${sid_instituto}`];
 
       if (values.sid_nivel && values.sid_nivel !== "0") {
         filtros.push(`sid_nivel=${values.sid_nivel}`);
@@ -193,55 +224,157 @@ const asignarAlumnosMensaje = async (
         filtros.push(`sid_grupo=${values.sid_grupo}`);
       }
 
-      alumnos = await InstitutoDataFilter(`alumno?${filtros.join("&")}`);
-
-      break;
+      return await InstitutoDataFilter(`alumno?${filtros.join("&")}`);
     }
 
     // MASIVO
     case 3:
-      alumnos = await InstitutoDataFilter(
+      return await InstitutoDataFilter(
         `alumno?sid_instituto=${sid_instituto}`,
       );
 
-      break;
-
     // ESPECIFICO
     case 4:
-      // Pendiente
-      alumnos = [];
-
-      break;
+      return getSelectedStudentIds(values).map((sidAlumno) => ({
+        sid_alumno: sidAlumno,
+      }));
 
     // EXTRACURRICULAR
     case 5:
-      alumnos = await InstitutoDataFilter(
-        `alumno_extracurricular/excel/${sid_instituto}`,
+      return await InstitutoDataFilter(
+        `alumno_extracurricular?sid_extracurricular=${values.sid_extracurricular}`,
       );
 
-      break;
-
     default:
-      alumnos = [];
+      return [];
   }
-  console.log("alumnos");
-  console.log(alumnos);
+};
 
-  for (const alumno of alumnos) {
-    await InstitutoDataAdd("asignar_mensaje", {
-      id_asignar_mensaje: "",
-      sid_mensaje,
-      sid_alumno: alumno.sid_alumno || alumno.id_alumno,
-      respuesta_rapida: values.respuesta_rapida_mensaje ? "si" : "no",
-      leido: "no",
+const validarDestinatariosMensaje = async (values, sid_instituto) => {
+  if (!hasSelectedValue(values.receptor)) {
+    throw new Error("Selecciona un receptor.");
+  }
+
+  if (!hasSelectedValue(values.sid_tipo)) {
+    throw new Error("Selecciona el tipo de mensaje.");
+  }
+
+  if (Number(values.receptor) === 2 && !hasSelectedValue(values.sid_nivel)) {
+    throw new Error("Selecciona al menos un nivel para el receptor.");
+  }
+
+  if (
+    Number(values.receptor) === 5 &&
+    !hasSelectedValue(values.sid_extracurricular)
+  ) {
+    throw new Error("Selecciona una actividad extracurricular.");
+  }
+
+  const alumnos = await obtenerAlumnosPorReceptor(
+    values.receptor,
+    values,
+    sid_instituto,
+  );
+
+  const alumnosValidos = alumnos.filter(
+    (alumno) => hasSelectedValue(alumno.sid_alumno || alumno.id_alumno),
+  );
+
+  if (!alumnosValidos.length) {
+    throw new Error("No hay alumnos para asignar el mensaje.");
+  }
+
+  return alumnosValidos;
+};
+
+const asignarAlumnosMensaje = async (sid_mensaje, values, alumnos) => {
+  const alumnoIds = [
+    ...new Set(
+      alumnos
+        .map((alumno) => alumno.sid_alumno || alumno.id_alumno)
+        .filter(hasSelectedValue),
+    ),
+  ];
+
+  const batchSize = 10;
+
+  for (let index = 0; index < alumnoIds.length; index += batchSize) {
+    const batch = alumnoIds.slice(index, index + batchSize);
+
+    await Promise.all(
+      batch.map((sid_alumno) =>
+        InstitutoDataAdd("asignar_mensaje", {
+          id_asignar_mensaje: "",
+          sid_mensaje,
+          sid_alumno,
+          respuesta_rapida: boolToDb(values.respuesta_rapida_mensaje),
+          leido: "no",
+        }),
+      ),
+    );
+  }
+
+  return alumnoIds.length;
+};
+
+const enviarNotificacionMensajeInmediato = async (sid_mensaje, values, alumnos) => {
+  if (isTruthyValue(values.programado_mensaje)) {
+    return null;
+  }
+
+  const sidAlumnos = [
+    ...new Set(
+      alumnos
+        .map((alumno) => alumno.sid_alumno || alumno.id_alumno)
+        .filter(hasSelectedValue),
+    ),
+  ];
+
+  if (!sidAlumnos.length) {
+    return null;
+  }
+
+  try {
+    return await InstitutoDataAdd(`mobile/notificaciones/mensajes/${sid_mensaje}/enviar`, {
+      sid_alumnos: sidAlumnos,
     });
+  } catch (error) {
+    console.error("Error enviando notificacion push del mensaje:", error);
+    return null;
   }
 };
 
 export const handleSaveMensaje = async (values, editingMensaje) => {
+  let loaderActivo = false;
+
   try {
     const sid_instituto = localStorage.getItem("sid_instituto");
     const ahora = new Date();
+    const fechaHoy = ahora.toLocaleDateString("en-CA");
+    const horaActual = ahora.toLocaleTimeString("es-MX", { hour12: false });
+    const archivos = validarArchivosMensaje(values);
+
+    Swal.fire({
+      title: editingMensaje ? "Actualizando mensaje" : "Enviando mensaje",
+      text: "Por favor espera...",
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+    });
+    loaderActivo = true;
+
+    const alumnosDestinatarios = await validarDestinatariosMensaje(
+      values,
+      sid_instituto,
+    );
+
+    if (!alumnosDestinatarios) {
+      Swal.close();
+      loaderActivo = false;
+      return false;
+    }
 
     const formData = new FormData();
 
@@ -256,7 +389,9 @@ export const handleSaveMensaje = async (values, editingMensaje) => {
 
     formData.append(
       "sid_alumno",
-      values.sid_estudiante !== "0" ? values.sid_estudiante : "",
+      alumnosDestinatarios[0]?.sid_alumno ||
+        alumnosDestinatarios[0]?.id_alumno ||
+        (values.sid_estudiante !== "0" ? values.sid_estudiante : ""),
     );
     formData.append(
       "sid_nivel",
@@ -278,28 +413,38 @@ export const handleSaveMensaje = async (values, editingMensaje) => {
     formData.append("sid_usuario_emisor", sid_instituto);
     formData.append("sid_instituto", sid_instituto);
     formData.append("receptor", values.receptor || "");
+    formData.append("destinatarios", alumnosDestinatarios.length);
     formData.append("asunto", values.asunto_mensaje || "");
     formData.append("mensaje", values.mensaje || "");
 
     formData.append(
       "respuesta_rapida",
-      values.respuesta_rapida_mensaje ? 1 : 0,
+      boolToDb(values.respuesta_rapida_mensaje),
     );
 
-    formData.append("mensaje_programado", values.programado_mensaje ? 1 : 0);
-    formData.append("repetir", values.repetir_mensaje ? 1 : 0);
+    formData.append("mensaje_programado", boolToDb(values.programado_mensaje));
+    formData.append("repetir", boolToDb(values.repetir_mensaje));
     formData.append(
       "fecha_envio",
-      values.fecha_envio_mensaje || ahora.toLocaleDateString("en-CA"),
+      isTruthyValue(values.programado_mensaje)
+        ? values.fecha_envio_mensaje || fechaHoy
+        : fechaHoy,
     );
 
     formData.append(
       "hora_envio",
-      values.hora_envio_mensaje ||
-        ahora.toLocaleTimeString("es-MX", { hour12: false }),
+      isTruthyValue(values.programado_mensaje)
+        ? values.hora_envio_mensaje || horaActual
+        : horaActual,
     );
-    formData.append("periodo", values.periodo_mensaje || "");
-    formData.append("fecha_fin", values.fecha_fin_mensaje || "");
+    formData.append(
+      "periodo",
+      isTruthyValue(values.repetir_mensaje) ? values.periodo_mensaje || "" : "",
+    );
+    formData.append(
+      "fecha_fin",
+      isTruthyValue(values.repetir_mensaje) ? values.fecha_fin_mensaje || "" : "",
+    );
     formData.append("leido", "no");
     formData.append("eliminado", "no");
 
@@ -311,7 +456,10 @@ export const handleSaveMensaje = async (values, editingMensaje) => {
         formData,
       );
 
+      Swal.close();
+      loaderActivo = false;
       showAlert("success", "Mensaje actualizado correctamente");
+      return true;
     } else {
       console.log("formData");
       console.log(formData);
@@ -324,11 +472,15 @@ export const handleSaveMensaje = async (values, editingMensaje) => {
       // GUARDAR URLS
       try {
         if (values.urls?.length) {
-          for (const item of values.urls) {
+          const urls = values.urls
+            .map((item) => (item.url || item || "").trim())
+            .filter(Boolean);
+
+          for (const url of urls) {
             await InstitutoDataAdd("url_mensaje", {
               id_url: "",
               sid_mensaje,
-              url: item.url || item,
+              url,
             });
           }
         }
@@ -338,12 +490,15 @@ export const handleSaveMensaje = async (values, editingMensaje) => {
 
       // GUARDAR ARCHIVOS
       try {
-        if (values.archivos?.length) {
+        if (archivos.length) {
           const archivosForm = new FormData();
 
-          for (const file of values.archivos) {
-            const archivoComprimido = await compressImage(file);
-            archivosForm.append("files", archivoComprimido);
+          for (const file of archivos) {
+            const archivoParaSubir = file.type.startsWith("image/")
+              ? await compressImage(file)
+              : file;
+
+            archivosForm.append("files", archivoParaSubir, file.name);
           }
 
           const responseFiles = await InstitutoDataAdd(
@@ -363,6 +518,7 @@ export const handleSaveMensaje = async (values, editingMensaje) => {
         }
       } catch (error) {
         console.error("Error guardando archivos:", error);
+        throw new Error(error.message || "Error guardando archivos adjuntos");
       }
 
       // ASIGNAR ALUMNOS
@@ -370,13 +526,26 @@ export const handleSaveMensaje = async (values, editingMensaje) => {
       console.log(" ASIGNAR ALUMNOS");
       console.log(sid_mensaje, values.sid_tipo, values, sid_instituto);
 
-      await asignarAlumnosMensaje(
+      const totalDestinatarios = await asignarAlumnosMensaje(
         sid_mensaje,
-        values.receptor,
         values,
-        sid_instituto,
+        alumnosDestinatarios,
       );
 
+      if (String(totalDestinatarios) !== String(alumnosDestinatarios.length)) {
+        await InstitutoDataUpdate(`mensaje/${sid_mensaje}`, {
+          destinatarios: totalDestinatarios,
+        });
+      }
+
+      await enviarNotificacionMensajeInmediato(
+        sid_mensaje,
+        values,
+        alumnosDestinatarios,
+      );
+
+      Swal.close();
+      loaderActivo = false;
       showAlert("success", "Mensaje agregado correctamente");
       return true;
     }
@@ -387,7 +556,11 @@ export const handleSaveMensaje = async (values, editingMensaje) => {
       console.log(error.response.data);
     }
 
-    showAlert("error", "Error al guardar el mensaje");
+    if (loaderActivo) {
+      Swal.close();
+    }
+
+    showAlert("error", error.message || "Error al guardar el mensaje");
 
     return false;
   }

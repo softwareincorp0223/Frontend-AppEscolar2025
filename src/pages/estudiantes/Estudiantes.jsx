@@ -20,6 +20,7 @@ import { obtenerGruposPorGrados } from "../../functions/GruposActions";
 import { obtenerPadres } from "../../functions/PadresActions";
 import { exportarExcel } from "../../functions/general/exportarExcel";
 import Modal from "../../components/Modal";
+import { showAlert } from "../../functions/general/Alerts";
 
 export default function Estudiantes() {
   const [alumnos, setAlumnos] = useState([]);
@@ -188,6 +189,7 @@ export default function Estudiantes() {
         name: "Padre",
         label: "Padre",
         type: "select",
+        select2: true,
         options: padres.map((r) => ({
           value: String(r.id_padre),
           label: r.nombre + " " + r.apellido,
@@ -202,7 +204,7 @@ export default function Estudiantes() {
         required: false
       }
     ],
-    [niveles, grados, grupos],
+    [niveles, grados, grupos, padres],
   );
 
   const resetFormulario = () => {
@@ -226,12 +228,17 @@ export default function Estudiantes() {
           title={editing ? "Editar Estudiante" : "Agregar Estudiante"}
           fields={formFields}
           columns={3}
-          onSubmit={(values) =>
-            handleSaveAlumnos(values, editing, setEditing, () => {
-              obtenerAlumnos(setAlumnos);
-              resetFormulario();
-            })
-          }
+          onSubmit={async (values) => {
+            try {
+              await handleSaveAlumnos(values, editing, setEditing, () => {
+                obtenerAlumnos(setAlumnos);
+                resetFormulario();
+              });
+            } catch (error) {
+              showAlert("error", error.message);
+              throw error;
+            }
+          }}
           initialValues={
             editing
               ? {

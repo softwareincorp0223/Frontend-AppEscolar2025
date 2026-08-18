@@ -7,6 +7,21 @@ import {
 import MensajesAlumnosTable from "../tables/MensajesAlumnosTable";
 import Loader from "../../functions/general/Loader";
 
+const TRUE_VALUES = ["si", "sí", "1", 1, true, "true"];
+
+const isActive = (value) =>
+  TRUE_VALUES.includes(
+    typeof value === "string" ? value.trim().toLowerCase() : value,
+  );
+
+const hasDate = (value) => value && value !== "0000-00-00";
+
+const getResourceUrl = (item) =>
+  item?.url || item?.archivo || item?.link || item?.ruta || "";
+
+const isImageUrl = (url) =>
+  /\.(png|jpe?g|gif|webp|bmp|svg)(\?.*)?$/i.test(url);
+
 export default function MensajeDetails({ mensaje, onClose }) {
   const [mensajeIndividual, setMensaje] = useState(null);
   const [alumnos, setAlumnos] = useState([]);
@@ -24,6 +39,10 @@ export default function MensajeDetails({ mensaje, onClose }) {
   }, []);
 
   console.log(mensajeIndividual);
+
+  const esProgramado = isActive(mensajeIndividual?.mensaje_programado);
+  const permiteRespuestaRapida = isActive(mensajeIndividual?.respuesta_rapida);
+  const seRepite = isActive(mensajeIndividual?.repetir);
 
   return (
     <div
@@ -156,32 +175,35 @@ export default function MensajeDetails({ mensaje, onClose }) {
                       </small>
 
                       <span className="fw-semibold">
-                        {mensajeIndividual?.mensaje_programado ? "Sí" : "No"}
+                        {esProgramado ? "Sí" : "No"}
                       </span>
                     </div>
 
-                    <div className="col-md-4 mb-2">
+                    <div className={`col-md-4 mb-2 ${esProgramado ? "" : "d-none"}`}>
                       <small className="text-muted d-block">
                         Fecha de envío
                       </small>
 
                       <span className="fw-semibold">
-                        {mensajeIndividual?.fecha_envio &&
-                        mensajeIndividual.fecha_envio !== "0000-00-00"
+                        {esProgramado && hasDate(mensajeIndividual?.fecha_envio)
                           ? fechaFormateada(mensajeIndividual.fecha_envio, {
                               paraUI: true,
                             })
-                          : "Sin información"}
+                          : esProgramado
+                            ? "Sin información"
+                            : "No aplica"}
                       </span>
                     </div>
 
-                    <div className="col-md-4 mb-2">
+                    <div className={`col-md-4 mb-2 ${esProgramado ? "" : "d-none"}`}>
                       <small className="text-muted d-block">
                         Hora de envío
                       </small>
 
                       <span className="fw-semibold">
-                        {mensajeIndividual?.hora_envio || "Sin información"}
+                        {esProgramado
+                          ? mensajeIndividual?.hora_envio || "Sin información"
+                          : "No aplica"}
                       </span>
                     </div>
                   </div>
@@ -200,7 +222,7 @@ export default function MensajeDetails({ mensaje, onClose }) {
                   </small>
 
                   <span className="fw-semibold">
-                    {mensajeIndividual?.respuesta_rapida ? "Sí" : "No"}
+                    {permiteRespuestaRapida ? "Sí" : "No"}
                   </span>
                 </div>
               </div>
@@ -217,33 +239,35 @@ export default function MensajeDetails({ mensaje, onClose }) {
                       <small className="text-muted d-block">Repetir</small>
 
                       <span className="fw-semibold">
-                        {mensajeIndividual?.repetir ? "Sí" : "No"}
+                        {seRepite ? "Sí" : "No"}
                       </span>
                     </div>
 
-                    <div className="col-md-4 mb-2">
+                    <div className={`col-md-4 mb-2 ${seRepite ? "" : "d-none"}`}>
                       <small className="text-muted d-block">Fecha inicio</small>
 
                       <span className="fw-semibold">
-                        {mensajeIndividual?.fecha_envio &&
-                        mensajeIndividual.fecha_envio !== "0000-00-00"
-                          ? fechaFormateada(mensajeIndividual.fecha_envio, {
+                        {seRepite && hasDate(mensajeIndividual?.periodo)
+                          ? fechaFormateada(mensajeIndividual.periodo, {
                               paraUI: true,
                             })
-                          : "Sin información"}
+                          : seRepite
+                            ? "Sin información"
+                            : "No aplica"}
                       </span>
                     </div>
 
-                    <div className="col-md-4 mb-2">
+                    <div className={`col-md-4 mb-2 ${seRepite ? "" : "d-none"}`}>
                       <small className="text-muted d-block">Fecha fin</small>
 
                       <span className="fw-semibold">
-                        {mensajeIndividual?.fecha_fin &&
-                        mensajeIndividual.fecha_fin !== "0000-00-00"
+                        {seRepite && hasDate(mensajeIndividual?.fecha_fin)
                           ? fechaFormateada(mensajeIndividual.fecha_fin, {
                               paraUI: true,
                             })
-                          : "Sin información"}
+                          : seRepite
+                            ? "Sin información"
+                            : "No aplica"}
                       </span>
                     </div>
                   </div>
@@ -292,24 +316,61 @@ export default function MensajeDetails({ mensaje, onClose }) {
 
                     <ul className="list-group list-group-flush">
                       {mensajeIndividual?.archivos?.length > 0 ? (
-                        mensajeIndividual.archivos.map((item, index) => (
-                          <li
-                            key={item.id_archivo_mensaje || index}
-                            className="list-group-item bg-transparent px-0"
-                          >
-                            <i className="material-icons align-middle me-2">
-                              attach_file
-                            </i>
-                            <a
-                              href={item.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-decoration-none"
+                        mensajeIndividual.archivos.map((item, index) => {
+                          const url = getResourceUrl(item);
+
+                          return (
+                            <li
+                              key={item.id_archivo_mensaje || index}
+                              className="list-group-item bg-transparent px-0"
                             >
-                              {item.url}
-                            </a>
-                          </li>
-                        ))
+                              {url ? (
+                                <div className="d-flex align-items-center gap-3">
+                                  {isImageUrl(url) ? (
+                                    <a
+                                      href={url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="d-inline-block"
+                                    >
+                                      <img
+                                        src={url}
+                                        alt={`Adjunto ${index + 1}`}
+                                        style={{
+                                          width: "72px",
+                                          height: "72px",
+                                          objectFit: "cover",
+                                          borderRadius: "6px",
+                                          border: "1px solid #e5e5e5",
+                                        }}
+                                      />
+                                    </a>
+                                  ) : (
+                                    <i
+                                      className="material-icons text-secondary"
+                                      style={{ fontSize: "36px" }}
+                                    >
+                                      attach_file
+                                    </i>
+                                  )}
+
+                                  <a
+                                    href={url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-decoration-none"
+                                  >
+                                    {isImageUrl(url) ? "Ver imagen" : "Ver archivo"}
+                                  </a>
+                                </div>
+                              ) : (
+                                <span className="text-muted">
+                                  Archivo sin URL
+                                </span>
+                              )}
+                            </li>
+                          );
+                        })
                       ) : (
                         <li className="list-group-item bg-transparent px-0 text-muted">
                           Sin archivos

@@ -1,5 +1,15 @@
 import React, { useMemo, useState } from "react";
 
+const normalizeValue = (value) =>
+  typeof value === "string" ? value.trim().toLowerCase() : value;
+
+const isYes = (value) => ["si", "sí", "1", 1, true, "true"].includes(normalizeValue(value));
+
+const isNo = (value) =>
+  ["no", "0", 0, false, "false", "", null, undefined].includes(
+    normalizeValue(value),
+  );
+
 export default function MensajesAlumnosTable({ data = [] }) {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -25,6 +35,26 @@ export default function MensajesAlumnosTable({ data = [] }) {
     start,
     start + perPage
   );
+
+  const visiblePages = useMemo(() => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, index) => index + 1);
+    }
+
+    const pages = new Set([1, totalPages, page - 1, page, page + 1]);
+
+    return [...pages]
+      .filter((pageNumber) => pageNumber >= 1 && pageNumber <= totalPages)
+      .sort((a, b) => a - b)
+      .reduce((items, pageNumber, index, pageNumbers) => {
+        if (index > 0 && pageNumber - pageNumbers[index - 1] > 1) {
+          items.push("ellipsis-" + pageNumbers[index - 1]);
+        }
+
+        items.push(pageNumber);
+        return items;
+      }, []);
+  }, [page, totalPages]);
 
   return (
     <div className="mt-4">
@@ -139,7 +169,11 @@ export default function MensajesAlumnosTable({ data = [] }) {
 
                   {/* RESPUESTA RAPIDA */}
                   <td>
-                    {row.respuesta_rapida ? (
+                    {isYes(row.respuesta_rapida) ? (
+                      <span className="badge bg-success-subtle text-success">
+                        Habilitada
+                      </span>
+                    ) : !isNo(row.respuesta_rapida) ? (
                       <div className="text-success fw-semibold">
                         {row.respuesta_rapida}
                       </div>
@@ -157,31 +191,54 @@ export default function MensajesAlumnosTable({ data = [] }) {
       </div>
 
       {/* FOOTER */}
-      <div className="d-flex justify-content-between align-items-center mt-3">
-        <small className="text-muted">
-          Mostrando {filteredData.length === 0 ? 0 : start + 1} a{" "}
-          {Math.min(
-            start + perPage,
-            filteredData.length
-          )}{" "}
-          de {filteredData.length} registros
-        </small>
-
+      <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mt-3">
         <div>
+          <small className="text-muted d-block">
+            Mostrando {filteredData.length === 0 ? 0 : start + 1} a{" "}
+            {Math.min(
+              start + perPage,
+              filteredData.length
+            )}{" "}
+            de {filteredData.length} registros
+          </small>
+          <small className="fw-semibold text-dark">
+            Página {totalPages === 0 ? 0 : page} de {totalPages}
+          </small>
+        </div>
+
+        <div className="d-flex flex-wrap align-items-center gap-2">
           <button
-            className="btn btn-sm btn-outline-secondary me-2"
+            className="btn btn-sm btn-outline-secondary"
             disabled={page === 1}
             onClick={() => setPage(page - 1)}
           >
             Anterior
           </button>
 
-          <span className="btn btn-sm btn-light border">
-            {page}
-          </span>
+          {visiblePages.map((pageNumber) =>
+            typeof pageNumber === "string" ? (
+              <span key={pageNumber} className="px-1 text-muted">
+                ...
+              </span>
+            ) : (
+              <button
+                key={pageNumber}
+                type="button"
+                className={`btn btn-sm ${
+                  pageNumber === page
+                    ? "btn-primary"
+                    : "btn-light border text-dark"
+                }`}
+                aria-current={pageNumber === page ? "page" : undefined}
+                onClick={() => setPage(pageNumber)}
+              >
+                {pageNumber}
+              </button>
+            ),
+          )}
 
           <button
-            className="btn btn-sm btn-outline-secondary ms-2"
+            className="btn btn-sm btn-outline-secondary"
             disabled={
               page === totalPages || totalPages === 0
             }

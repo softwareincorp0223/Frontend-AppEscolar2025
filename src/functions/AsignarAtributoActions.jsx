@@ -8,6 +8,20 @@ import {
   InstitutoDataFilter,
 } from "./general/DataActions";
 
+const enviarNotificacionSeguimientoIndividual = async (alumno) => {
+  if (!alumno?.id_seguimiento) return;
+
+  const sid_alumnos = alumno.sid_alumno ? [alumno.sid_alumno] : [];
+
+  try {
+    await InstitutoDataAdd(
+      `mobile/notificaciones/seguimientos/${alumno.id_seguimiento}/enviar`,
+      { sid_alumnos }
+    );
+  } catch (error) {
+    console.error("No se pudo enviar la notificacion de seguimiento", error);
+  }
+};
 
 export const obtenerAtributoSeguimientos = async (setAtributoSeguimiento, sid_seguimiento) => {
   try {
@@ -42,6 +56,7 @@ export const handleSaveAsignarAtributo = async (values, alumno, obtenerAtributoS
   console.log("Payload enviado:", payload);
 
   await InstitutoDataAdd("asignar_atributo", payload);
+  await enviarNotificacionSeguimientoIndividual(alumno);
 
   showAlert("success", "Atributo Agregado Correctamente");
 

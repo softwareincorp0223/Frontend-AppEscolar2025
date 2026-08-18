@@ -12,6 +12,7 @@ import {
 import { generarCodigoQR } from "./general/Functions";
 import { phpRequest } from "./general/PhpDataActions";
 import { compressImage } from "./general/ImageCompresor";
+import { descargarQR } from "./general/Functions";
 
 pdfMake.vfs = pdfFonts.vfs;
 
@@ -78,7 +79,7 @@ export const handleSaveAlumnos = async (
     sid_instituto,
   };
 
-  if (!editing || foto) {
+  if (foto) {
     payload.foto = foto;
   }
 
@@ -91,14 +92,55 @@ export const handleSaveAlumnos = async (
   } else {
     const res = await InstitutoDataAdd("alumno", payload);
 
-    await phpRequest("alumno.php", "modificar", {
-      id_alumno: res.id_alumno,
-    });
+    try {
+      const result =await phpRequest("alumno.php", "modificar", {
+        id_alumno: res.id_alumno,
+      });
+      console.log("result");
+      console.log(result);
+      
+    } catch (error) {
+      console.warn("[alumno.php modificar]", error);
+    }
 
     showAlert("success", "Alumno agregado correctamente");
   }
 
   await obtenerAlumnos();
+};
+
+export const obtenerQRCodeAlumnoCodificado = async (id_alumno) => {
+  const respuesta = await phpRequest("alumno.php", "consultar", {
+    id_alumno,
+  });
+
+  const alumno = respuesta?.data?.[0];
+
+  if (!alumno?.codigo_qr) {
+    throw new Error("No se pudo obtener el codigo QR codificado del alumno");
+  }
+
+  return alumno.codigo_qr;
+};
+
+export const obtenerQRCodificadosAlumnos = async () => {
+  const respuesta = await phpRequest("alumno.php", "consultar");
+  const alumnos = Array.isArray(respuesta?.data) ? respuesta.data : [];
+
+  return new Map(
+    alumnos
+      .filter((alumno) => alumno.id_alumno && alumno.codigo_qr)
+      .map((alumno) => [String(alumno.id_alumno), alumno.codigo_qr]),
+  );
+};
+
+export const descargarQRAlumno = async (alumno) => {
+  try {
+    const codigoCodificado = await obtenerQRCodeAlumnoCodificado(alumno.id_alumno);
+    await descargarQR(alumno.id_alumno, codigoCodificado);
+  } catch (error) {
+    showAlert("error", error.message || "Error al descargar QR del alumno");
+  }
 };
 
 export const descargarQRsAlumnos = async () => {
@@ -114,11 +156,23 @@ export const descargarQRsAlumnos = async () => {
       return;
     }
 
+    const codigosCodificados = await obtenerQRCodificadosAlumnos();
+
     const alumnosConQR = await Promise.all(
-      alumnosApi.map(async (alumno) => ({
-        ...alumno,
-        qrImagen: await QRCode.toDataURL(alumno.codigo_qr),
-      })),
+      alumnosApi.map(async (alumno) => {
+        const codigoCodificado = codigosCodificados.get(String(alumno.id_alumno));
+
+        if (!codigoCodificado) {
+          throw new Error(
+            `No se pudo obtener el codigo QR codificado de ${alumno.nombre || "un alumno"}`,
+          );
+        }
+
+        return {
+          ...alumno,
+          qrImagen: await QRCode.toDataURL(codigoCodificado),
+        };
+      }),
     );
 
     const hoy = new Date();

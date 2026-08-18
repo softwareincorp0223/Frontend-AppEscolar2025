@@ -1,4 +1,9 @@
 import React, { useState, useEffect } from "react";
+import $ from "jquery";
+import select2Factory from "select2";
+import "select2/dist/css/select2.min.css";
+
+select2Factory(window, $);
 
 export default function Form({
   title,
@@ -18,12 +23,55 @@ export default function Form({
     }
   }, [initialValues]);
 
+  useEffect(() => {
+    const selects = $(".form-select2-control");
+
+    selects.each(function initSelect2() {
+      const select = $(this);
+
+      if (select.data("select2")) {
+        select.select2("destroy");
+      }
+
+      select.select2({
+        width: "100%",
+        placeholder: select.data("placeholder") || "Seleccione...",
+        allowClear: !select.prop("required"),
+      });
+
+      select.on("change.form-select2", (event) => {
+        const field = fields.find((item) => item.name === event.target.name);
+
+        handleChange(event);
+        field?.onChange?.(event);
+      });
+    });
+
+    return () => {
+      selects.each(function destroySelect2() {
+        const select = $(this);
+        select.off("change.form-select2");
+        if (select.data("select2")) {
+          select.select2("destroy");
+        }
+      });
+    };
+  }, [fields]);
+
+  useEffect(() => {
+    $(".form-select2-control").each(function syncSelect2Value() {
+      const select = $(this);
+      const name = select.attr("name");
+      select.val(formValues[name] || "").trigger("change.select2");
+    });
+  }, [formValues]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormValues((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     const newErrors = {};
@@ -45,10 +93,13 @@ export default function Form({
     }
 
     setErrors({});
-    if (onSubmit) onSubmit(formValues);
-
-    setFormValues({});
-    e.target.reset();
+    try {
+      if (onSubmit) await onSubmit(formValues);
+      setFormValues({});
+      e.target.reset();
+    } catch (error) {
+      console.error("[Form submit]", error);
+    }
   };
 
   const colClass = `col-md-${12 / columns} mb-4`;
@@ -84,11 +135,16 @@ export default function Form({
                 ) : field.type === "select" ? (
                   <select
                     className={`form-select ${
+                      field.select2 ? "form-select2-control " : ""
+                    }${
                       errors[field.name] ? "is-invalid" : ""
                     }`}
+                    id={field.name}
                     name={field.name}
                     value={formValues[field.name] ?? ""}
                     disabled={field.disabled}
+                    required={field.required}
+                    data-placeholder={field.placeholder || "Seleccione..."}
                     onChange={(e) => {
                       handleChange(e);
                       field.onChange && field.onChange(e);

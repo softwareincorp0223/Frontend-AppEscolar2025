@@ -48,8 +48,18 @@ export const handleSave = async (values, editingEvento, setEditingEvento, obtene
 
   console.log("Payload enviado:", payload);
 
-  await InstitutoDataAdd("evento", payload);
+  const response = await InstitutoDataAdd("evento", payload);
   showAlert("success", "Evento agregado correctamente");
+
+  const sid_evento = response?.id_evento || response?.id || payload.id_evento;
+
+  if (!editingEvento && sid_evento) {
+    try {
+      await InstitutoDataAdd(`mobile/notificaciones/calendario/${sid_evento}/enviar`, {});
+    } catch (error) {
+      console.error("No se pudo enviar la notificacion de calendario", error);
+    }
+  }
 
   if (editingEvento) {
     await InstitutoDataUpdate(`evento/${editingEvento.id_evento}`, payload);

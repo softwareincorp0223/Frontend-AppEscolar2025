@@ -33,7 +33,7 @@ export const menuItems = [
     label: "Mensajes",
     icon: "email",
     children: [
-      { label: "Mensajes", link: "/src/pages/mensajes/index.html", permission: "mensajes" },
+      { label: "Enviar Mensajes", link: "/src/pages/mensajes/index.html", permission: "mensajes" },
       { label: "Tipo de Mensaje", link: "/src/pages/mensaje-tipo/index.html", permission: "mensajes" },
       { label: "Historial", link: "/src/pages/mensaje-historial/index.html", permission: "mensajes" },
       { label: "Registro", link: "/src/pages/mensaje-registro/index.html", permission: "mensajes" },
@@ -85,7 +85,7 @@ export const menuItems = [
     label: "Tareas",
     icon: "print",
     children: [
-      { label: "Asignar Tareas", link: "/src/pages/tarea-asignar/index.html", permission: "tareas" },
+      { label: "Enviar Tareas", link: "/src/pages/tarea-asignar/index.html", permission: "tareas" },
       { label: "Tareas", link: "/src/pages/tareas/index.html", permission: "tareas" },
     ],
   },

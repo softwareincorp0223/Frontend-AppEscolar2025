@@ -300,8 +300,67 @@ export default function DataUpload({
     }
   };
 
+  const getFilenameFromHeaders = (res, fallbackName) => {
+    const disposition = res.headers.get("content-disposition") || "";
+    const utfMatch = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+    const plainMatch = disposition.match(/filename="?([^"]+)"?/i);
+    const rawFilename = utfMatch?.[1] || plainMatch?.[1];
+
+    if (!rawFilename) return fallbackName;
+
+    try {
+      return decodeURIComponent(rawFilename);
+    } catch (err) {
+      console.error("Error decodificando nombre de plantilla:", err);
+      return rawFilename;
+    }
+  };
+
+  const downloadPhpTemplate = async (url, fallbackName) => {
+    setLoading(true);
+
+    try {
+      const res = await fetch(url.toString(), { credentials: "include" });
+      const contentType = res.headers.get("content-type") || "";
+
+      if (contentType.includes("application/json")) {
+        const json = await res.json().catch(() => ({}));
+        throw new Error(
+          json.msg || json.error || "No se pudo generar la plantilla."
+        );
+      }
+
+      if (!res.ok) {
+        throw new Error("No se pudo generar la plantilla.");
+      }
+
+      const blob = await res.blob();
+      if (!blob.size) {
+        throw new Error("La plantilla se genero vacia. Intenta de nuevo.");
+      }
+
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = getFilenameFromHeaders(res, fallbackName);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(objectUrl);
+      setTemplateSelectionOpen(false);
+    } catch (err) {
+      console.error(err);
+      showAlert(
+        "error",
+        err.message || "No se pudo descargar la plantilla."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // --- Descargar plantilla ---
-  // Si hay URL pública uso window.open, si no informo al usuario.
+  // Si el endpoint PHP responde JSON de error, lo convierto en SweetAlert.
   const openTemplateSelection = async () => {
     setTemplateSelectionOpen(true);
     setTemplateOptionsLoading(true);
@@ -331,7 +390,13 @@ export default function DataUpload({
       setTemplateOptions(usesSchoolGroupSelection ? json.data || {} : Array.isArray(json.data) ? json.data : []);
     } catch (err) {
       console.error(err);
-      showAlert("error", usesSchoolGroupSelection ? "Error al cargar los grupos." : "Error al cargar las extracurriculares.");
+      showAlert(
+        "error",
+        err.message ||
+          (usesSchoolGroupSelection
+            ? "Error al cargar los grupos."
+            : "Error al cargar las extracurriculares.")
+      );
       setTemplateSelectionOpen(false);
     } finally {
       setTemplateOptionsLoading(false);
@@ -410,7 +475,7 @@ export default function DataUpload({
     return templateOptions.find((item) => item.id_extracurricular === id)?.nombre || id;
   };
 
-  const downloadSelectedTemplate = () => {
+  const downloadSelectedTemplate = async () => {
     const currentSelection = selectedTemplateOptions;
 
     if (isCalificacionesImport) {
@@ -431,8 +496,7 @@ export default function DataUpload({
       url.searchParams.set("grado_id", templateGrado);
       url.searchParams.set("grupo_id", templateGrupo);
       url.searchParams.set("numero_evaluaciones", String(numeroEvaluaciones));
-      window.open(url.toString(), "_blank");
-      setTemplateSelectionOpen(false);
+      await downloadPhpTemplate(url, "plantilla_calificaciones.xlsx");
       return;
     }
 
@@ -448,11 +512,15 @@ export default function DataUpload({
       isSeguimientosImport ? "grupo_ids" : "extracurricular_ids",
       currentSelection.join(",")
     );
-    window.open(url.toString(), "_blank");
-    setTemplateSelectionOpen(false);
+    await downloadPhpTemplate(
+      url,
+      isSeguimientosImport
+        ? "plantilla_seguimientos.xlsx"
+        : "plantilla_extracurriculares.xlsx"
+    );
   };
 
-  const handleDownloadTemplate = () => {
+  const handleDownloadTemplate = async () => {
     if (usesTemplateSelection) {
       openTemplateSelection();
       return;
@@ -462,7 +530,7 @@ export default function DataUpload({
       const url = new URL(active.phpEndpoint);
       url.searchParams.set("accion", "plantilla");
       url.searchParams.set("sid_instituto", sidInstituto());
-      window.open(url.toString(), "_blank");
+      await downloadPhpTemplate(url, `plantilla_${active.id || "datos"}.xlsx`);
       return;
     }
 
@@ -512,7 +580,11 @@ export default function DataUpload({
         setStep(json.status === "ok" ? 3 : 2);
 
         if (json.status !== "ok") {
-          setValidationFeedback(row);
+          if (row.errores.length) {
+            setValidationFeedback(row);
+          } else {
+            showAlert("error", row.msg || "No se pudo validar el archivo.");
+          }
         }
 
         return;
@@ -594,6 +666,50 @@ export default function DataUpload({
     }
   };
 
+  const notifyAfterPhpImport = async (json, row) => {
+    if (active.id !== "seguimientos" && active.id !== "calificaciones") return;
+
+    const endpoint =
+      active.id === "seguimientos"
+        ? "mobile/notificaciones/seguimientos/import/enviar"
+        : "mobile/notificaciones/calificaciones/import/enviar";
+
+    const payload =
+      active.id === "seguimientos"
+        ? {
+            ids_asignar_atributo: Array.isArray(json.id) ? json.id : [],
+            import_id: row.importId,
+            sid_instituto: sidInstituto(),
+            sid_grupos: selectedTemplateOptions,
+          }
+        : {
+            import_id: row.importId,
+            sid_instituto: sidInstituto(),
+            sid_nivel: templateNivel,
+            sid_grado: templateGrado,
+            sid_grupo: templateGrupo || selectedTemplateOptions[0] || "",
+          };
+
+    try {
+      const res = await fetch(`${API_URL}${endpoint}`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeaders(),
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const errorJson = await res.json().catch(() => ({}));
+        console.error("Error en endpoint de notificacion", errorJson);
+      }
+    } catch (error) {
+      console.error("No se pudo enviar la notificacion del importador", error);
+    }
+  };
+
   // --- Guardar en BD ---
   // Yo llamo al endpoint de guardado o simulo el guardado y actualizo la tabla.
   const handleSave = async (rowId) => {
@@ -647,6 +763,7 @@ export default function DataUpload({
               : r
           )
         );
+        await notifyAfterPhpImport(json, row);
         showAlert("success", json.msg || "Datos guardados correctamente.");
         return;
       }

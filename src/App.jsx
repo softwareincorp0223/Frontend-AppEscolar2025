@@ -4,23 +4,23 @@ import background from "./assets/1.png";
 import "./index.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import { login } from "./functions/general/Auth";
+import { showAlert } from "./functions/general/Alerts";
 
 export default function App() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
 
     try {
       await login(email, password);
+      await showAlert("success", "Sesion iniciada correctamente");
       window.location.href = "/src/pages/estadisticas/index.html";
     } catch (err) {
-      setError(err.message || "Error al iniciar sesion");
+      showAlert("error", err.message || "No se pudo iniciar sesion");
     } finally {
       setLoading(false);
     }
@@ -70,7 +70,6 @@ export default function App() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
-              {error && <p className="text-danger small mb-2">{error}</p>}
               <button
                 type="submit"
                 className="btn btn-primary-def text-white fw-bold w-100 mb-2 roboto p-2"

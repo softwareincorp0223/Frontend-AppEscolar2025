@@ -1,4 +1,5 @@
 import { showAlert } from "./general/Alerts";
+import Swal from "sweetalert2";
 import { fechaFormateada } from "./general/Functions";
 import {
   InstitutoDataFilter,
@@ -7,6 +8,113 @@ import {
   InstitutoDataDelete,
   InstitutoDataUpdate,
 } from "./general/DataActions";
+
+const MAX_FILE_SIZE_MB = 5;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+
+const hasSelectedValue = (value) =>
+  value !== undefined && value !== null && value !== "" && value !== "0";
+
+const getArchivosValidos = (values) =>
+  (values.archivos || []).filter((archivo) => archivo instanceof File);
+
+const validarArchivosTarea = (values) => {
+  const archivos = getArchivosValidos(values);
+  const archivoPesado = archivos.find(
+    (archivo) => archivo.size > MAX_FILE_SIZE_BYTES
+  );
+
+  if (archivoPesado) {
+    throw new Error(
+      `El archivo "${archivoPesado.name}" pesa más de ${MAX_FILE_SIZE_MB} MB.`
+    );
+  }
+
+  return archivos;
+};
+
+const validarCamposTarea = (values) => {
+  if (!hasSelectedValue(values.nivel_tarea)) {
+    throw new Error("Selecciona un nivel.");
+  }
+
+  if (!hasSelectedValue(values.grado_tarea)) {
+    throw new Error("Selecciona un grado.");
+  }
+
+  if (!hasSelectedValue(values.grupo_tarea)) {
+    throw new Error("Selecciona un grupo.");
+  }
+
+  if (!hasSelectedValue(values.materia_tarea)) {
+    throw new Error("Selecciona una materia.");
+  }
+};
+
+const obtenerAlumnosParaTarea = async (values, sid_instituto) => {
+  const filtros = [`sid_instituto=${sid_instituto}`];
+
+  if (hasSelectedValue(values.nivel_tarea)) {
+    filtros.push(`sid_nivel=${values.nivel_tarea}`);
+  }
+
+  if (hasSelectedValue(values.grado_tarea)) {
+    filtros.push(`sid_grado=${values.grado_tarea}`);
+  }
+
+  if (hasSelectedValue(values.grupo_tarea)) {
+    filtros.push(`sid_grupo=${values.grupo_tarea}`);
+  }
+
+  const alumnos = await InstitutoDataFilter(`alumno?${filtros.join("&")}`);
+
+  if (!alumnos.length) {
+    throw new Error(
+      "No hay alumnos asignados para el grupo de esta materia."
+    );
+  }
+
+  return alumnos;
+};
+
+const asignarAlumnosTarea = async (sid_tarea, alumnos) => {
+  const alumnoIds = [
+    ...new Set(alumnos.map((alumno) => alumno.id_alumno).filter(Boolean)),
+  ];
+  const batchSize = 10;
+
+  for (let index = 0; index < alumnoIds.length; index += batchSize) {
+    const batch = alumnoIds.slice(index, index + batchSize);
+
+    await Promise.all(
+      batch.map((sid_alumno) =>
+        InstitutoDataAdd("asignar_tarea", {
+          id_asignar_tarea: "",
+          sid_tarea,
+          sid_alumno,
+          estatus: "PENDIENTE",
+          leido: "no",
+        })
+      )
+    );
+  }
+};
+
+const enviarNotificacionTarea = async (sid_tarea, alumnos) => {
+  const sid_alumnos = [
+    ...new Set(alumnos.map((alumno) => alumno.id_alumno).filter(Boolean)),
+  ];
+
+  if (!sid_tarea || !sid_alumnos.length) return;
+
+  try {
+    await InstitutoDataAdd(`mobile/notificaciones/tareas/${sid_tarea}/enviar`, {
+      sid_alumnos,
+    });
+  } catch (error) {
+    console.error("No se pudo enviar la notificacion de tarea", error);
+  }
+};
 
 export const obtenerTareas = async (setTareas) => {
   try {
@@ -117,6 +225,29 @@ export const obtenerAlumnosTarea = async (tarea_id, setTareas) => {
       "archivo_tarea?sid_tarea=" + tarea_id
     );
 
+    const asignacionesIds = alumnosApi
+      .map((data) => data.id_asignar_tarea)
+      .filter(Boolean);
+
+    const archivosRespuestaApi = (
+      await Promise.all(
+        asignacionesIds.map((idAsignarTarea) =>
+          InstitutoDataFilter(
+            "archivo_respuesta_tarea?sid_asignar_tarea=" + idAsignarTarea
+          )
+        )
+      )
+    ).flat();
+
+    const archivoRespuestaPorAsignacion = archivosRespuestaApi.reduce(
+      (map, item) => {
+        if (!item.sid_asignar_tarea || !item.archivo) return map;
+        map[item.sid_asignar_tarea] = item.archivo;
+        return map;
+      },
+      {}
+    );
+
     const formateados = tareasApi.map((a) => ({
       ...a,
       id: a.id_tareas,
@@ -131,6 +262,7 @@ export const obtenerAlumnosTarea = async (tarea_id, setTareas) => {
           `${data.Alumno?.nombre || ""} ${data.Alumno?.apellido || ""}`.trim() ||
           "Sin alumno",
         matricula: data.Alumno?.matricula || "Sin matrícula",
+        archivo: archivoRespuestaPorAsignacion[data.id_asignar_tarea] || "",
       })),
       urls: alumnoUrls,
       archivos: alumnoArchivos,
@@ -222,12 +354,28 @@ export const handleDeleteAsignarTarea = async (row, obtenerAlumnos) => {
 };
 
 export const handleSaveTarea = async (values, editingTarea = null) => {
+  let loaderActivo = false;
+
   try {
     const sid_instituto = localStorage.getItem("sid_instituto");
 
-    // =========================
-    // Datos tarea
-    // =========================
+    validarCamposTarea(values);
+    const archivos = validarArchivosTarea(values);
+
+    Swal.fire({
+      title: editingTarea ? "Actualizando tarea" : "Enviando tarea",
+      text: "Por favor espera...",
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+    });
+    loaderActivo = true;
+
+    const alumnos = editingTarea
+      ? []
+      : await obtenerAlumnosParaTarea(values, sid_instituto);
 
     const payload = {
       id_tareas: editingTarea ? editingTarea.id_tarea : "",
@@ -238,127 +386,65 @@ export const handleSaveTarea = async (values, editingTarea = null) => {
       fecha_creacion: new Date().toISOString(),
     };
 
-    /*
-    // ======================================
-    // CUANDO SE SUBAN ARCHIVOS
-    // ======================================
-
-    const formData = new FormData();
-
-    Object.entries(payload).forEach(([key, value]) => {
-      formData.append(key, value);
-    });
-    */
-
-    // =========================
-    // GUARDAR TAREA
-    // =========================
-
     if (editingTarea) {
+      await InstitutoDataUpdate(`tareas/${editingTarea.id_tarea}`, payload);
 
-      await InstitutoDataUpdate(
-        `tareas/${editingTarea.id_tarea}`,
-        payload
-        // formData
-      );
-
+      Swal.close();
+      loaderActivo = false;
       showAlert("success", "Tarea actualizada correctamente");
-
-    } else {
-
-      const response = await InstitutoDataAdd(
-        "tareas",
-        payload
-        // formData
-      );
-
-      const sid_tarea = response.id_tareas || response.id_tarea;
-
-      // =========================
-      // GUARDAR URLS
-      // =========================
-
-      const urls = (values.urls || []).filter((url) => url?.trim());
-
-      if (urls.length > 0) {
-        for (const url of urls) {
-          await InstitutoDataAdd("url_tarea", {
-            id_url_tarea: "",
-            sid_tarea,
-            url: url.trim(),
-          });
-        }
-      }
-
-      // =========================
-      // GUARDAR ARCHIVOS
-      // =========================
-
-      const archivos = (values.archivos || []).filter(Boolean);
-
-      if (archivos.length > 0) {
-        const archivosForm = new FormData();
-
-        for (const archivo of archivos) {
-          archivosForm.append("files", archivo);
-        }
-
-        const responseFiles = await InstitutoDataAdd(
-          "drive/upload",
-          archivosForm
-        );
-
-        if (responseFiles.ok && responseFiles.files?.length) {
-          for (const archivo of responseFiles.files) {
-            await InstitutoDataAdd("archivo_tarea", {
-              id_archivo_tarea: "",
-              sid_tarea,
-              url: archivo.url,
-            });
-          }
-        }
-      }
-
-      // =========================
-      // ASIGNAR ALUMNOS DEL GRUPO
-      // =========================
-
-      const filtros = [];
-
-      if (values.nivel_tarea && values.nivel_tarea !== "0") {
-        filtros.push(`sid_nivel=${values.nivel_tarea}`);
-      }
-
-      if (values.grado_tarea && values.grado_tarea !== "0") {
-        filtros.push(`sid_grado=${values.grado_tarea}`);
-      }
-
-      if (values.grupo_tarea && values.grupo_tarea !== "0") {
-        filtros.push(`sid_grupo=${values.grupo_tarea}`);
-      }
-
-      const alumnos = await InstitutoDataFilter(`alumno?${filtros.join("&")}`);
-
-      for (const alumno of alumnos) {
-        await InstitutoDataAdd("asignar_tarea", {
-          id_asignar_tarea: "",
-          sid_tarea,
-          sid_alumno: alumno.id_alumno,
-          estatus: "PENDIENTE",
-          leido: "no",
-        });
-      }
-
-      showAlert("success", "Tarea agregada correctamente");
       return true;
     }
 
-  } catch (error) {
+    const response = await InstitutoDataAdd("tareas", payload);
+    const sid_tarea = response.id_tareas || response.id_tarea;
 
+    const urls = (values.urls || [])
+      .map((url) => (url || "").trim())
+      .filter(Boolean);
+
+    for (const url of urls) {
+      await InstitutoDataAdd("url_tarea", {
+        id_url_tarea: "",
+        sid_tarea,
+        url,
+      });
+    }
+
+    if (archivos.length > 0) {
+      const archivosForm = new FormData();
+
+      for (const archivo of archivos) {
+        archivosForm.append("files", archivo, archivo.name);
+      }
+
+      const responseFiles = await InstitutoDataAdd("drive/upload", archivosForm);
+
+      if (responseFiles.ok && responseFiles.files?.length) {
+        for (const archivo of responseFiles.files) {
+          await InstitutoDataAdd("archivo_tarea", {
+            id_archivo_tarea: "",
+            sid_tarea,
+            url: archivo.url,
+          });
+        }
+      }
+    }
+
+    await asignarAlumnosTarea(sid_tarea, alumnos);
+    await enviarNotificacionTarea(sid_tarea, alumnos);
+
+    Swal.close();
+    loaderActivo = false;
+    showAlert("success", "Tarea enviada correctamente");
+    return true;
+  } catch (error) {
     console.error(error);
 
-    showAlert("error", "Error al guardar la tarea");
-    return false;
+    if (loaderActivo) {
+      Swal.close();
+    }
 
+    showAlert("error", error.message || "Error al guardar la tarea");
+    return false;
   }
 };

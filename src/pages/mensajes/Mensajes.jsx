@@ -120,11 +120,11 @@ export default function Mensaje() {
     const guardado = await handleSaveMensaje(formData);
 
     if (guardado) {
-      obtenerMensajes((res) => {
+      await obtenerMensajes((res) => {
         setMensajesOriginal(res);
         setMensajes(res);
       });
-      obtenerMensajesExcel(setMensajesExcel);
+      await obtenerMensajesExcel(setMensajesExcel);
     }
 
     return guardado;

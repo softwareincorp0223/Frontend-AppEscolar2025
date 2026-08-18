@@ -58,7 +58,7 @@ export default function TareasAlumnosTable({
   const getStatusClass = (estatus) => {
     const estado = String(estatus || "").toLowerCase();
 
-    if (estado === "entregado" || estado === "completado") {
+    if (estado === "enviado" || estado === "entregado" || estado === "completado") {
       return "bg-success";
     }
 
@@ -66,7 +66,20 @@ export default function TareasAlumnosTable({
       return "bg-primary";
     }
 
+    if (estado === "observacion") {
+      return "bg-danger";
+    }
+
     return "bg-warning text-dark";
+  };
+
+  const getStatusLabel = (estatus) => {
+    const estado = String(estatus || "pendiente").toLowerCase();
+
+    if (estado === "enviado" || estado === "entregado") return "Enviado";
+    if (estado === "revisado") return "Revisado";
+    if (estado === "observacion") return "Observacion";
+    return "Pendiente";
   };
 
   return (
@@ -132,7 +145,7 @@ export default function TareasAlumnosTable({
                   <td>{row.alumno}</td>
                   <td>
                     <span className={`badge ${getStatusClass(row.estatus)}`}>
-                      {row.estatus || "PENDIENTE"}
+                      {getStatusLabel(row.estatus)}
                     </span>
                   </td>
                   <td>{row.observacion || "Sin observación"}</td>
@@ -228,8 +241,9 @@ export default function TareasAlumnosTable({
                     }
                   >
                     <option value="PENDIENTE">Pendiente</option>
-                    <option value="ENTREGADO">Entregado</option>
+                    <option value="ENVIADO">Enviado</option>
                     <option value="REVISADO">Revisado</option>
+                    <option value="OBSERVACION">Observacion</option>
                   </select>
                 </div>
 

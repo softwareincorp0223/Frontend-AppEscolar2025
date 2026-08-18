@@ -18,15 +18,14 @@ export function setAuthHeader(token = localStorage.getItem("token")) {
 
 setAuthHeader();
 
-// Iniciar sesión
+// Iniciar sesion
 export async function login(correo, contrasena) {
-
-  const tipo = 'usuario';
+  const tipo = "usuario";
 
   try {
     const res = await axios.post(
       API_URL,
-      { correo, contrasena, tipo},
+      { correo, contrasena, tipo },
       {
         headers: {
           "Content-Type": "application/json",
@@ -34,7 +33,6 @@ export async function login(correo, contrasena) {
       }
     );
 
-    // Aquí asumimos que la respuesta trae user + token
     const { usuario, token } = res.data;
 
     localStorage.setItem("user", JSON.stringify(usuario));
@@ -44,14 +42,11 @@ export async function login(correo, contrasena) {
 
     return res.data;
   } catch (error) {
-    // Detectar si es un error de CORS o de credenciales
-    if (error.response) {
-      throw new Error(error.response.data?.message || "Error en el servidor");
-    } else if (error.request) {
-      throw new Error("Error de conexión con el servidor (CORS o red)");
-    } else {
-      throw new Error("Error desconocido");
+    if (error.response?.status === 401 || error.response?.status === 404) {
+      throw new Error("Correo o contrasena incorrectos");
     }
+
+    throw new Error("No se pudo iniciar sesion");
   }
 }
 
