@@ -118,6 +118,11 @@ export function logout() {
   localStorage.removeItem("user");
   localStorage.removeItem("token");
   localStorage.removeItem("sid_instituto");
+
   setAuthHeader(null);
-  window.location.href = "/src/pages/login/index.html";
+
+  window.location.href =
+    window.location.hostname === "localhost"
+      ? "/src/pages/login/index.html"
+      : "/sistema/src/pages/login/index.html";
 }
