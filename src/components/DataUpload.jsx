@@ -493,7 +493,7 @@ export default function DataUpload({
         return;
       }
 
-      const url = new URL(active.phpEndpoint);
+      const url = new URL(active.phpEndpoint, window.location.origin);
       url.searchParams.set("accion", "plantilla");
       url.searchParams.set("sid_instituto", sidInstituto());
       url.searchParams.set("nivel_id", templateNivel);
@@ -509,7 +509,7 @@ export default function DataUpload({
       return;
     }
 
-    const url = new URL(active.phpEndpoint);
+    const url = new URL(active.phpEndpoint, window.location.origin);
     url.searchParams.set("accion", "plantilla");
     url.searchParams.set("sid_instituto", sidInstituto());
     url.searchParams.set(
@@ -531,7 +531,7 @@ export default function DataUpload({
     }
 
     if (isPhpImport) {
-      const url = new URL(active.phpEndpoint);
+      const url = new URL(active.phpEndpoint, window.location.origin);
       url.searchParams.set("accion", "plantilla");
       url.searchParams.set("sid_instituto", sidInstituto());
       await downloadPhpTemplate(url, `plantilla_${active.id || "datos"}.xlsx`);
