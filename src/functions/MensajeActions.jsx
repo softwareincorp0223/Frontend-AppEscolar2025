@@ -9,12 +9,13 @@ import {
   InstitutoDataFilter,
 } from "./general/DataActions";
 import { mapReceptor } from "./general/Functions";
-import { compressImage } from "./general/ImageCompresor";
+import {
+  MAX_UPLOAD_FILE_SIZE_MB,
+  MAX_UPLOAD_FILE_SIZE_BYTES,
+  prepareFileForUpload,
+} from "./general/ImageCompresor";
 
 const TRUE_VALUES = ["si", "sí", "1", 1, true, "true"];
-
-const MAX_FILE_SIZE_MB = 5;
-const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 const isTruthyValue = (value) =>
   TRUE_VALUES.includes(
@@ -25,6 +26,17 @@ const boolToDb = (value) => (isTruthyValue(value) ? "si" : "no");
 
 const hasSelectedValue = (value) =>
   value !== undefined && value !== null && value !== "" && value !== "0";
+
+const appendIfHasValue = (formData, key, value) => {
+  if (hasSelectedValue(value)) {
+    formData.append(key, value);
+  }
+};
+
+const closeMensajeLoader = () => {
+  Swal.hideLoading();
+  Swal.close();
+};
 
 const getSelectedStudentIds = (values) => {
   const ids = values.sid_estudiantes?.length
@@ -39,11 +51,13 @@ const getArchivosValidos = (values) =>
 
 const validarArchivosMensaje = (values) => {
   const archivos = getArchivosValidos(values);
-  const archivoPesado = archivos.find((file) => file.size > MAX_FILE_SIZE_BYTES);
+  const archivoPesado = archivos.find(
+    (file) => file.size > MAX_UPLOAD_FILE_SIZE_BYTES,
+  );
 
   if (archivoPesado) {
     throw new Error(
-      `El archivo "${archivoPesado.name}" pesa más de ${MAX_FILE_SIZE_MB} MB.`,
+      `El archivo "${archivoPesado.name}" pesa más de ${MAX_UPLOAD_FILE_SIZE_MB} MB.`,
     );
   }
 
@@ -250,6 +264,39 @@ const obtenerAlumnosPorReceptor = async (receptor, values, sid_instituto) => {
   }
 };
 
+const validarCamposObligatoriosMensaje = (values) => {
+  const faltantes = [];
+  const receptor = Number(values.receptor);
+
+  if (!hasSelectedValue(values.receptor)) {
+    faltantes.push("Receptor");
+  }
+
+  if (!hasSelectedValue(values.sid_tipo)) {
+    faltantes.push("Tipo de mensaje");
+  }
+
+  if ((receptor === 1 || receptor === 4) && !getSelectedStudentIds(values).length) {
+    faltantes.push(receptor === 4 ? "Estudiantes especificos" : "Estudiante");
+  }
+
+  if (receptor === 2 && !hasSelectedValue(values.sid_nivel)) {
+    faltantes.push("Nivel");
+  }
+
+  if (receptor === 5 && !hasSelectedValue(values.sid_extracurricular)) {
+    faltantes.push("Actividad extracurricular");
+  }
+
+  if (!faltantes.length) return;
+
+  throw new Error(
+    `Completa los datos obligatorios del mensaje:\n${faltantes
+      .map((campo) => `- ${campo}`)
+      .join("\n")}`,
+  );
+};
+
 const validarDestinatariosMensaje = async (values, sid_instituto) => {
   if (!hasSelectedValue(values.receptor)) {
     throw new Error("Selecciona un receptor.");
@@ -354,6 +401,8 @@ export const handleSaveMensaje = async (values, editingMensaje) => {
     const horaActual = ahora.toLocaleTimeString("es-MX", { hour12: false });
     const archivos = validarArchivosMensaje(values);
 
+    validarCamposObligatoriosMensaje(values);
+
     Swal.fire({
       title: editingMensaje ? "Actualizando mensaje" : "Enviando mensaje",
       text: "Por favor espera...",
@@ -371,7 +420,7 @@ export const handleSaveMensaje = async (values, editingMensaje) => {
     );
 
     if (!alumnosDestinatarios) {
-      Swal.close();
+      closeMensajeLoader();
       loaderActivo = false;
       return false;
     }
@@ -422,29 +471,30 @@ export const handleSaveMensaje = async (values, editingMensaje) => {
       boolToDb(values.respuesta_rapida_mensaje),
     );
 
-    formData.append("mensaje_programado", boolToDb(values.programado_mensaje));
-    formData.append("repetir", boolToDb(values.repetir_mensaje));
+    const mensajeProgramado = isTruthyValue(values.programado_mensaje);
+    const repetirMensaje = mensajeProgramado && isTruthyValue(values.repetir_mensaje);
+
+    formData.append("mensaje_programado", boolToDb(mensajeProgramado));
+    formData.append("repetir", boolToDb(repetirMensaje));
     formData.append(
       "fecha_envio",
-      isTruthyValue(values.programado_mensaje)
+      mensajeProgramado
         ? values.fecha_envio_mensaje || fechaHoy
         : fechaHoy,
     );
 
     formData.append(
       "hora_envio",
-      isTruthyValue(values.programado_mensaje)
+      mensajeProgramado
         ? values.hora_envio_mensaje || horaActual
         : horaActual,
     );
-    formData.append(
-      "periodo",
-      isTruthyValue(values.repetir_mensaje) ? values.periodo_mensaje || "" : "",
-    );
-    formData.append(
-      "fecha_fin",
-      isTruthyValue(values.repetir_mensaje) ? values.fecha_fin_mensaje || "" : "",
-    );
+
+    if (repetirMensaje) {
+      appendIfHasValue(formData, "periodo", values.periodo_mensaje);
+      appendIfHasValue(formData, "fecha_fin", values.fecha_fin_mensaje);
+    }
+
     formData.append("leido", "no");
     formData.append("eliminado", "no");
 
@@ -456,7 +506,7 @@ export const handleSaveMensaje = async (values, editingMensaje) => {
         formData,
       );
 
-      Swal.close();
+      closeMensajeLoader();
       loaderActivo = false;
       showAlert("success", "Mensaje actualizado correctamente");
       return true;
@@ -494,9 +544,7 @@ export const handleSaveMensaje = async (values, editingMensaje) => {
           const archivosForm = new FormData();
 
           for (const file of archivos) {
-            const archivoParaSubir = file.type.startsWith("image/")
-              ? await compressImage(file)
-              : file;
+            const archivoParaSubir = await prepareFileForUpload(file);
 
             archivosForm.append("files", archivoParaSubir, file.name);
           }
@@ -544,7 +592,7 @@ export const handleSaveMensaje = async (values, editingMensaje) => {
         alumnosDestinatarios,
       );
 
-      Swal.close();
+      closeMensajeLoader();
       loaderActivo = false;
       showAlert("success", "Mensaje agregado correctamente");
       return true;
@@ -557,7 +605,7 @@ export const handleSaveMensaje = async (values, editingMensaje) => {
     }
 
     if (loaderActivo) {
-      Swal.close();
+      closeMensajeLoader();
     }
 
     showAlert("error", error.message || "Error al guardar el mensaje");

@@ -11,7 +11,7 @@ import {
 } from "./general/DataActions";
 import { generarCodigoQR } from "./general/Functions";
 import { phpRequest } from "./general/PhpDataActions";
-import { compressImage } from "./general/ImageCompresor";
+import { prepareFileForUpload } from "./general/ImageCompresor";
 import { descargarQR } from "./general/Functions";
 
 pdfMake.vfs = pdfFonts.vfs;
@@ -50,9 +50,9 @@ export const handleSaveAlumnos = async (
   if (values.imagen) {
     const formData = new FormData();
 
-    const imagenComprimida = await compressImage(values.imagen);
+    const imagenComprimida = await prepareFileForUpload(values.imagen);
 
-    formData.append("files", imagenComprimida);
+    formData.append("files", imagenComprimida, values.imagen.name);
 
     const response = await InstitutoDataAdd("drive/upload", formData);
 

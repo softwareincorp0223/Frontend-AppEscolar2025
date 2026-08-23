@@ -22,11 +22,14 @@ export default function MensajeRegistro() {
     setRegistros(resultado);
   };
 
-  useEffect(() => {
+  const recargarRegistroMensajes = () =>
     obtenerRegistroMensajes((res) => {
       setRegistrosOriginal(res);
       setRegistros(res);
-    }).finally(() => setLoadingRegistros(false));
+    });
+
+  useEffect(() => {
+    recargarRegistroMensajes().finally(() => setLoadingRegistros(false));
   }, []);
 
   const columns = [
@@ -82,13 +85,13 @@ export default function MensajeRegistro() {
                       icon: "restore",
                       className: "btn-outline-success",
                       onClick: (row) =>
-                        handleRestore(row, obtenerRegistroMensajes),
+                        handleRestore(row, recargarRegistroMensajes),
                     },
                   ]}
                 />
               )}
               headerButtons={(row) => (
-                <TableButtons row={row} actions={["excel"]} />
+                <TableButtons row={row} />
               )}
             />
           </div>

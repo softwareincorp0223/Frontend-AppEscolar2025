@@ -9,6 +9,8 @@ import "quill/dist/quill.snow.css";
 
 select2Factory(window, $);
 
+const periodoOptions = ["Diario", "Semanalmente", "Mensualmente", "Anualmente"];
+
 export default function MensajeForm({
   mensajesTipo,
   niveles,
@@ -94,7 +96,14 @@ export default function MensajeForm({
           programado_mensaje: false,
           fecha_envio_mensaje: "",
           hora_envio_mensaje: "",
+          repetir_mensaje: false,
+          periodo_mensaje: "",
+          fecha_fin_mensaje: "",
         };
+      }
+
+      if (name === "repetir_mensaje" && checked && !prev.programado_mensaje) {
+        return prev;
       }
 
       if (name === "repetir_mensaje" && !checked) {
@@ -548,10 +557,11 @@ export default function MensajeForm({
                 <input
                   type="checkbox"
                   name="repetir_mensaje"
-                  checked={formData.repetir_mensaje}
+                  checked={formData.programado_mensaje && formData.repetir_mensaje}
                   onChange={handleChange}
                   className="form-check-input"
                   id="repetirMensaje"
+                  disabled={!formData.programado_mensaje}
                 />
                 <label htmlFor="repetirMensaje" className="form-check-label">
                   Repetir
@@ -559,17 +569,23 @@ export default function MensajeForm({
               </div>
             </div>
 
-            {/* Desde */}
+            {/* Periodo */}
             <div className="col-lg-4">
-              <label>Desde</label>
-              <input
-                type="date"
+              <label>Periodo</label>
+              <select
                 name="periodo_mensaje"
                 value={formData.periodo_mensaje || ""}
                 onChange={handleChange}
                 className="form-control"
-                disabled={!formData.repetir_mensaje}
-              />
+                disabled={!formData.programado_mensaje || !formData.repetir_mensaje}
+              >
+                <option value="">Selecciona una opción</option>
+                {periodoOptions.map((periodo) => (
+                  <option key={periodo} value={periodo}>
+                    {periodo}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* Hasta */}
@@ -581,7 +597,7 @@ export default function MensajeForm({
                 value={formData.fecha_fin_mensaje || ""}
                 onChange={handleChange}
                 className="form-control"
-                disabled={!formData.repetir_mensaje}
+                disabled={!formData.programado_mensaje || !formData.repetir_mensaje}
               />
             </div>
           </div>

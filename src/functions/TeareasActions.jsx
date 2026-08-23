@@ -8,9 +8,11 @@ import {
   InstitutoDataDelete,
   InstitutoDataUpdate,
 } from "./general/DataActions";
-
-const MAX_FILE_SIZE_MB = 5;
-const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+import {
+  MAX_UPLOAD_FILE_SIZE_MB,
+  MAX_UPLOAD_FILE_SIZE_BYTES,
+  prepareFileForUpload,
+} from "./general/ImageCompresor";
 
 const hasSelectedValue = (value) =>
   value !== undefined && value !== null && value !== "" && value !== "0";
@@ -21,12 +23,12 @@ const getArchivosValidos = (values) =>
 const validarArchivosTarea = (values) => {
   const archivos = getArchivosValidos(values);
   const archivoPesado = archivos.find(
-    (archivo) => archivo.size > MAX_FILE_SIZE_BYTES
+    (archivo) => archivo.size > MAX_UPLOAD_FILE_SIZE_BYTES
   );
 
   if (archivoPesado) {
     throw new Error(
-      `El archivo "${archivoPesado.name}" pesa más de ${MAX_FILE_SIZE_MB} MB.`
+      `El archivo "${archivoPesado.name}" pesa más de ${MAX_UPLOAD_FILE_SIZE_MB} MB.`
     );
   }
 
@@ -414,7 +416,8 @@ export const handleSaveTarea = async (values, editingTarea = null) => {
       const archivosForm = new FormData();
 
       for (const archivo of archivos) {
-        archivosForm.append("files", archivo, archivo.name);
+        const archivoParaSubir = await prepareFileForUpload(archivo);
+        archivosForm.append("files", archivoParaSubir, archivo.name);
       }
 
       const responseFiles = await InstitutoDataAdd("drive/upload", archivosForm);

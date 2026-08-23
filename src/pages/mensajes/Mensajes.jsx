@@ -61,7 +61,6 @@ export default function Mensaje() {
     fecha_fin_mensaje: "",
     archivos: [null],
     urls: [""],
-    repetir_mensaje: false,
   });
 
   const manejarMensajesFiltros = (f) => {

@@ -98,12 +98,6 @@ export const menuItems = [
     permission: "cargar_datos",
 
   },
-  {
-    label: "Pagos",
-    icon: "credit_card",
-    link: liga + "pagos/index.html",
-    permission: "pagos",
-  },
 ];
 
 export const findPermissionByPath = (path: string): string | null => {

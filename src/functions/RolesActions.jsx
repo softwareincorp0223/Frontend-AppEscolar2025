@@ -72,7 +72,6 @@ const ensureRolePermissions = async (
       );
 
       const payload = {
-        privilegios_rol_id: existing?.privilegios_rol_id || null,
         sid_rol: roleId,
         sid_privilegios: permission.id,
         activo: toActiveString(permissionsMap[permission.id]),
@@ -81,7 +80,10 @@ const ensureRolePermissions = async (
       if (existing) {
         return InstitutoDataUpdate(
           `privilegios_rol/${existing.privilegios_rol_id}`,
-          payload
+          {
+            ...payload,
+            privilegios_rol_id: existing.privilegios_rol_id,
+          }
         );
       }
 

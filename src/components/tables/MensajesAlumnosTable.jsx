@@ -10,6 +10,12 @@ const isNo = (value) =>
     normalizeValue(value),
   );
 
+const isQuickAnswerYes = (value) =>
+  ["respuesta_si", "respondio_si", "respondio:si"].includes(normalizeValue(value));
+
+const isQuickAnswerNo = (value) =>
+  ["respuesta_no", "respondio_no", "respondio:no"].includes(normalizeValue(value));
+
 export default function MensajesAlumnosTable({ data = [] }) {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -169,7 +175,11 @@ export default function MensajesAlumnosTable({ data = [] }) {
 
                   {/* RESPUESTA RAPIDA */}
                   <td>
-                    {isYes(row.respuesta_rapida) ? (
+                    {isQuickAnswerYes(row.respuesta_rapida) ? (
+                      <div className="text-success fw-semibold">Si</div>
+                    ) : isQuickAnswerNo(row.respuesta_rapida) ? (
+                      <div className="text-danger fw-semibold">No</div>
+                    ) : isYes(row.respuesta_rapida) ? (
                       <span className="badge bg-success-subtle text-success">
                         Habilitada
                       </span>
@@ -251,3 +261,4 @@ export default function MensajesAlumnosTable({ data = [] }) {
     </div>
   );
 }
+

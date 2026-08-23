@@ -243,12 +243,12 @@ export default function MensajeDetails({ mensaje, onClose }) {
                       </span>
                     </div>
 
-                    <div className={`col-md-4 mb-2 ${seRepite ? "" : "d-none"}`}>
+                    <div className={`col-md-3 mb-2 ${seRepite ? "" : "d-none"}`}>
                       <small className="text-muted d-block">Fecha inicio</small>
 
                       <span className="fw-semibold">
-                        {seRepite && hasDate(mensajeIndividual?.periodo)
-                          ? fechaFormateada(mensajeIndividual.periodo, {
+                        {seRepite && hasDate(mensajeIndividual?.fecha_envio)
+                          ? fechaFormateada(mensajeIndividual.fecha_envio, {
                               paraUI: true,
                             })
                           : seRepite
@@ -257,7 +257,15 @@ export default function MensajeDetails({ mensaje, onClose }) {
                       </span>
                     </div>
 
-                    <div className={`col-md-4 mb-2 ${seRepite ? "" : "d-none"}`}>
+                    <div className={`col-md-3 mb-2 ${seRepite ? "" : "d-none"}`}>
+                      <small className="text-muted d-block">Periodo</small>
+
+                      <span className="fw-semibold">
+                        {mensajeIndividual?.periodo || "Sin información"}
+                      </span>
+                    </div>
+
+                    <div className={`col-md-3 mb-2 ${seRepite ? "" : "d-none"}`}>
                       <small className="text-muted d-block">Fecha fin</small>
 
                       <span className="fw-semibold">

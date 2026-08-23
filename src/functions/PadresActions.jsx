@@ -1,5 +1,4 @@
 import { showAlert } from "./general/Alerts";
-import { fechaFormateada } from "./general/Functions";
 import {
   InstitutoData,
   InstitutoDataAdd,
@@ -46,7 +45,6 @@ export const handleSave = async (
   obtenerPadres,
 ) => {
   const sid_instituto = localStorage.getItem("sid_instituto");
-  const fecha = fechaFormateada();
 
   const generarPassword = () => Math.random().toString(36).slice(-10);
 
@@ -55,7 +53,6 @@ export const handleSave = async (
     nombre: values.nombre,
     apellido: values.apellido,
     correo: values.correo,
-    creacion: editing ? editing.creacion : fecha,
     contrasena: editing ? editing.contrasena : generarPassword(),
     codigo_qr: editing ? editing.codigo_qr : generarCodigoQR(),
     sid_instituto,
@@ -66,7 +63,10 @@ export const handleSave = async (
     showAlert("success", "Padre actualizado correctamente");
     setEditing(null);
   } else {
-    const res = await InstitutoDataAdd("padre", payload);
+    const res = await InstitutoDataAdd("padre", {
+      ...payload,
+      creacion: new Date().toISOString(),
+    });
     await phpRequest("padre.php", "modificar", {
       id_padre: res.id_padre,
     });
