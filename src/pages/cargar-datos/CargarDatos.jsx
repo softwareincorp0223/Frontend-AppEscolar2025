@@ -5,11 +5,16 @@ import DataUpload from "../../components/DataUpload";
 import { getDataUploadRequirement } from "../../utils/dataUploadRequirements";
 
 export default function CargarDatos() {
+  const PHP_API_URL =
+    window.location.hostname === "localhost"
+      ? "http://localhost/apiAppEscolarv2/"
+      : "/apiAppEscolarv2/";
+
   const modules = [
     {
       id: "alumnos",
       label: "Padres y Alumnos",
-      phpEndpoint: "http://localhost/apiAppEscolarv2/padres_alumnos_import.php",
+      phpEndpoint: `${PHP_API_URL}padres_alumnos_import.php`,
       requirements: getDataUploadRequirement("alumnos"),
       historyModule: "padres_alumnos",
       historyModules: ["alumnos", "padres_alumnos", "Padres y Alumnos"],
@@ -17,7 +22,7 @@ export default function CargarDatos() {
     {
       id: "extracurriculares",
       label: "Extracurriculares",
-      phpEndpoint: "http://localhost/apiAppEscolarv2/extracurriculares_import.php",
+      phpEndpoint: `${PHP_API_URL}extracurriculares_import.php`,
       requirements: getDataUploadRequirement("extracurriculares"),
       historyModule: "extracurriculares",
       historyModules: ["extracurricular", "extracurriculares"],
@@ -25,7 +30,7 @@ export default function CargarDatos() {
     {
       id: "seguimientos",
       label: "Seguimientos",
-      phpEndpoint: "http://localhost/apiAppEscolarv2/seguimientos_import.php",
+      phpEndpoint: `${PHP_API_URL}seguimientos_import.php`,
       requirements: getDataUploadRequirement("seguimientos"),
       historyModule: "seguimientos",
       historyModules: ["seguimiento", "seguimientos"],
@@ -33,7 +38,7 @@ export default function CargarDatos() {
     {
       id: "calificaciones",
       label: "Calificaciones",
-      phpEndpoint: "http://localhost/apiAppEscolarv2/calificaciones_import.php",
+      phpEndpoint: `${PHP_API_URL}calificaciones_import.php`,
       requirements: getDataUploadRequirement("calificaciones"),
       historyModule: "calificaciones",
       historyModules: ["calificacion", "calificaciones"],

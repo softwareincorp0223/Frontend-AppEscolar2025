@@ -1,9 +1,16 @@
 // src/utils/auth.js
 import axios from "axios";
 
-const API_URL = "http://localhost:4000/api/auth/login"; // <-- ajusta tu endpoint real
-const AUTH_URL = "http://localhost:4000/api/auth";
+const API_URL =
+  window.location.hostname === "localhost"
+    ? "http://localhost:4000/api/auth/login"
+    : "/sistema/api/auth/login";
 
+const AUTH_URL =
+  window.location.hostname === "localhost"
+    ? "http://localhost:4000/api/auth"
+    : "/sistema/api/auth";
+    
 // Configurar axios globalmente
 axios.defaults.withCredentials = true; // si usas cookies
 axios.defaults.headers.common["Accept"] = "application/json";

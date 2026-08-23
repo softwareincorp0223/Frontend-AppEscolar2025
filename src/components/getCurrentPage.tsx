@@ -1,4 +1,7 @@
-const liga = "/src/pages/";
+const liga =
+  window.location.hostname === "localhost"
+    ? "/src/pages/"
+    : "/sistema/src/pages/";
 
 export const menuItems = [
   {

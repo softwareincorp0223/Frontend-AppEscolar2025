@@ -10,6 +10,7 @@ export default function App() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const BASE_URL = window.location.hostname === "localhost" ? "" : "/sistema";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -18,7 +19,7 @@ export default function App() {
     try {
       await login(email, password);
       await showAlert("success", "Sesion iniciada correctamente");
-      window.location.href = "/src/pages/estadisticas/index.html";
+      window.location.href = `${BASE_URL}/src/pages/estadisticas/index.html`;
     } catch (err) {
       showAlert("error", err.message || "No se pudo iniciar sesion");
     } finally {

@@ -1,6 +1,9 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:4000/api/"; // <-- ajusta tu endpoint real
+const API_URL =
+  window.location.hostname === "localhost"
+    ? "http://localhost:4000/api/"
+    : "/sistema/api/";
 
 // Configurar axios globalmente
 axios.defaults.withCredentials = true; // si usas cookies

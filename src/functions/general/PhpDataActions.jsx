@@ -1,6 +1,9 @@
 import axios from "axios";
 
-const API_URL = "http://localhost/apiAppEscolarv2/";
+const API_URL =
+  window.location.hostname === "localhost"
+    ? "http://localhost/apiAppEscolarv2/"
+    : "/apiAppEscolarv2/";
 
 // Config global
 axios.defaults.headers.common["Accept"] = "application/json";

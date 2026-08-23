@@ -9,7 +9,11 @@ window.jQuery = window.jQuery || $;
 
 const TEST_MODE_STORAGE_KEY = "dataUploadTestMode";
 const HISTORY_LIMIT = 10;
-const API_URL = "http://localhost:4000/api/";
+const API_URL =
+  window.location.hostname === "localhost"
+    ? "http://localhost:4000/api/"
+    : "/sistema/api/";
+
 
 /**
  * DataUpload
