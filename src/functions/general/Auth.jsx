@@ -124,5 +124,5 @@ export function logout() {
   window.location.href =
     window.location.hostname === "localhost"
       ? "/src/pages/login/index.html"
-      : "/sistema/src/pages/login/index.html";
+      : "/sistema/";
 }
