@@ -376,7 +376,7 @@ export default function DataUpload({
     setTemplateNumeroEvaluaciones("1");
 
     try {
-      const url = new URL(active.phpEndpoint);
+      const url = new URL(active.phpEndpoint, window.location.origin);
       url.searchParams.set("accion", "opciones");
       url.searchParams.set("sid_instituto", sidInstituto());
       const res = await fetch(url.toString(), { credentials: "include" });
