@@ -2,8 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { getUser, refreshUserPermissions } from "../general/Auth";
 import { findPermissionByPath } from "../../components/getCurrentPage";
 
-const BASE_URL = window.location.hostname === "localhost" ? "" : "/sistema";
-const HOME_URL = `${BASE_URL}/src/pages/home/index.html`;
+const HOME_URL = "/src/pages/home/index.html";
 
 export function hasPermission(permissionKey) {
   if (!permissionKey) return true;
