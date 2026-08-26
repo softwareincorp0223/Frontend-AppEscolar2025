@@ -5,6 +5,7 @@ import "./index.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import { login } from "./functions/general/Auth";
 import { showAlert } from "./functions/general/Alerts";
+//nuevos
 
 export default function App() {
   const [email, setEmail] = useState("");

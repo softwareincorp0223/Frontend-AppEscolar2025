@@ -224,7 +224,9 @@ export default function Filter({
           >
             <option value="">Nivel...</option>
             {niveles.map((n) => (
-              <option value={n.id_nivel}>{n.nombre}</option>
+              <option key={n.id_nivel || n.nombre} value={n.id_nivel}>
+                {n.nombre}
+              </option>
             ))}
           </select>
         </div>
@@ -246,7 +248,9 @@ export default function Filter({
           >
             <option value="">Grado...</option>
             {grados.map((g) => (
-              <option value={g.id_grado}>{g.nombre}</option>
+              <option key={g.id_grado || g.nombre} value={g.id_grado}>
+                {g.nombre}
+              </option>
             ))}
           </select>
         </div>
@@ -264,7 +268,9 @@ export default function Filter({
           >
             <option value="">Grupo...</option>
             {grupos.map((g) => (
-              <option value={g.nombre}>{g.nombre}</option>
+              <option key={g.id_grupo || g.nombre} value={g.nombre}>
+                {g.nombre}
+              </option>
             ))}
           </select>
         </div>
