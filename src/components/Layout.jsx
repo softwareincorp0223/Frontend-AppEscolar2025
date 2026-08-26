@@ -13,13 +13,16 @@ import PermissionGuard from "../functions/permissions/PermissionGuard";
 
 import "../index.css";
 
+const BASE_URL = window.location.hostname === "localhost" ? "" : "/sistema";
+const LOGIN_URL = `${BASE_URL}/src/pages/login/index.html`;
+
 export default function Layout({ children }) {
   const [authChecked, setAuthChecked] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false); //  control del sidebar en móvil
 
   useEffect(() => {
     if (!isAuthenticated()) {
-      window.location.href = "/src/pages/login/index.html";
+      window.location.href = LOGIN_URL;
     } else {
       setAuthChecked(true);
     }

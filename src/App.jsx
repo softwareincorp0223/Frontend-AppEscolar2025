@@ -5,12 +5,35 @@ import "./index.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import { login } from "./functions/general/Auth";
 import { showAlert } from "./functions/general/Alerts";
+import { hasPermission } from "./functions/permissions/PermissionGuard";
+import { menuItems } from "./components/getCurrentPage";
+
+const BASE_URL = window.location.hostname === "localhost" ? "" : "/sistema";
+const HOME_URL = `${BASE_URL}/src/pages/home/index.html`;
+
+const getFirstAllowedRoute = () => {
+  for (const item of menuItems) {
+    if (item.children?.length) {
+      const allowedChild = item.children.find((child) =>
+        hasPermission(child.permission)
+      );
+
+      if (allowedChild?.link) return allowedChild.link;
+      continue;
+    }
+
+    if (item.link && hasPermission(item.permission)) {
+      return item.link;
+    }
+  }
+
+  return HOME_URL;
+};
 
 export default function App() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const BASE_URL = window.location.hostname === "localhost" ? "" : "/sistema";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,7 +42,7 @@ export default function App() {
     try {
       await login(email, password);
       await showAlert("success", "Sesion iniciada correctamente");
-      window.location.href = `${BASE_URL}/src/pages/estadisticas/index.html`;
+      window.location.href = getFirstAllowedRoute();
     } catch (err) {
       showAlert("error", err.message || "No se pudo iniciar sesion");
     } finally {
