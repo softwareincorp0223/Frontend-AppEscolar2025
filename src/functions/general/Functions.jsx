@@ -240,7 +240,7 @@ export function filtrarTabla({ filtros, dataOriginal }) {
 
 export async function descargarQR(id, codigo = "") {
   console.log(id, codigo);
-  
+
   if (!codigo) {
     const canvas = document.querySelector("canvas");
     if (!canvas) return;
@@ -281,3 +281,38 @@ export const mapReceptor = (value) => {
       return "Sin destinatario";
   }
 };
+
+export function formatearHora(
+  hora,
+  { conSegundos = false, formato12 = false } = {},
+) {
+  if (hora === null || hora === undefined || hora === "") return "";
+
+  // Formatos admitidos: H:mm, HH:mm y HH:mm:ss
+  const coincidencia = String(hora)
+    .trim()
+    .match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+
+  if (!coincidencia) return hora;
+
+  const horas = Number(coincidencia[1]);
+  const minutos = Number(coincidencia[2]);
+  const segundos = Number(coincidencia[3] ?? 0);
+
+  // Validar que sea una hora del día
+  if (horas > 23 || minutos > 59 || segundos > 59) return hora;
+
+  const h = formato12 ? horas % 12 || 12 : horas;
+
+  const hh = String(h).padStart(2, "0");
+  const mm = String(minutos).padStart(2, "0");
+  const ss = String(segundos).padStart(2, "0");
+
+  const resultado = conSegundos
+    ? `${hh}:${mm}:${ss}`
+    : `${hh}:${mm}`;
+
+  return formato12
+    ? `${resultado} ${horas >= 12 ? "PM" : "AM"}`
+    : resultado;
+}

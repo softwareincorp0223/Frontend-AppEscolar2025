@@ -1,5 +1,5 @@
 import { showAlert } from "./general/Alerts";
-import { fechaFormateada } from "./general/Functions";
+import { fechaFormateada, formatearHora } from "./general/Functions";
 import {
   InstitutoDataFilter,
   InstitutoData,
@@ -22,7 +22,10 @@ export const obtenerAsistencias = async (setUsuarios) => {
       nivel: a.nombre_nivel,
       grado: a.nombre_grado,
       grupo: a.nombre_grupo,
-      fecha_y_hora: fechaFormateada(a.fecha_ingreso, { paraUI: true }),
+      fecha_y_hora: [
+        fechaFormateada(a.fecha_ingreso, { paraUI: true }),
+        formatearHora(a.hora),
+      ].filter(Boolean).join(" "),
       tipo: a.tipo,
       registrado_por: a.nombre_usuario + ' ' + a.apellido_usuario,
     }));
@@ -43,7 +46,10 @@ export const obtenerAsistenciasExcel = async (setAsistenciasExcel) => {
       Nivel: a.nombre_nivel || "",
       Grado: a.nombre_grado || "",
       Grupo: a.nombre_grupo || "",
-      FechaHora: fechaFormateada(a.fecha_ingreso, { paraUI: true }) || "",
+      FechaHora: [
+        fechaFormateada(a.fecha_ingreso, { paraUI: true }),
+        formatearHora(a.hora),
+      ].filter(Boolean).join(" "),
       Tipo: a.tipo || "",
       RegistradoPor: `${a.nombre_usuario || ""} ${a.apellido_usuario || ""}`.trim(),
     }));
